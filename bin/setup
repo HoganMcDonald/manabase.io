@@ -12,7 +12,24 @@ FileUtils.chdir APP_ROOT do
   # This script is idempotent, so that you can run it at any time and get an expectable outcome.
   # Add necessary setup steps to this file.
 
-  puts "== Installing dependencies =="
+  puts "== Starting Docker services =="
+  system!("docker-compose up -d")
+
+  puts "\n== Waiting for PostgreSQL to be ready =="
+  max_attempts = 30
+  attempt = 0
+  until system("docker-compose exec -T postgres pg_isready -U manabase -d manabase_dev", out: File::NULL, err: File::NULL)
+    attempt += 1
+    if attempt >= max_attempts
+      puts "PostgreSQL did not become ready in time"
+      exit 1
+    end
+    print "."
+    sleep 1
+  end
+  puts " Ready!"
+
+  puts "\n== Installing dependencies =="
   system("bundle check") || system!("bundle install")
 
   puts "== Installing npm dependencies =="

@@ -2,6 +2,27 @@
 
 export PORT="${PORT:-3000}"
 
+# Start Docker services if not already running
+if ! docker-compose ps | grep -q "Up"; then
+  echo "Starting Docker services..."
+  docker-compose up -d
+
+  # Wait for PostgreSQL to be ready
+  echo "Waiting for PostgreSQL to be ready..."
+  max_attempts=30
+  attempt=0
+  while ! docker-compose exec -T postgres pg_isready -U manabase -d manabase_dev > /dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    if [ $attempt -ge $max_attempts ]; then
+      echo "PostgreSQL did not become ready in time"
+      exit 1
+    fi
+    printf "."
+    sleep 1
+  done
+  echo " Ready!"
+fi
+
 if command -v overmind 1> /dev/null 2>&1
 then
   overmind start -f Procfile.dev "$@"
