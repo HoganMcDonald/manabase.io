@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  # Mount Mission Control Jobs for monitoring background jobs
+  mount MissionControl::Jobs::Engine, at: "/jobs"
+
   get  "sign_in", to: "sessions#new", as: :sign_in
   post "sign_in", to: "sessions#create"
   get  "sign_up", to: "users#new", as: :sign_up

@@ -7,7 +7,7 @@ gem "rails", "~> 8.0.2"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use PostgreSQL as the database for Active Record
-gem "pg", "~> 1.5"
+gem "pg", "~> 1.5.9"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
@@ -51,6 +51,12 @@ gem "js-routes"
 
 # ActiveResource for REST APIs
 gem "activeresource", "~> 6.1"
+
+# Mission Control Jobs for monitoring Solid Queue
+gem "mission_control-jobs"
+
+# State machine for ActiveRecord
+gem "aasm"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

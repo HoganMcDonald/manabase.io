@@ -24,6 +24,14 @@ class ApplicationController < ActionController::Base
     Current.session ||= Session.find_by_id(cookies.signed[:session_token])
   end
 
+  def require_admin
+    authenticate
+    unless Current.user&.admin?
+      flash[:alert] = "You must be an admin to access this page"
+      redirect_to root_path
+    end
+  end
+
   def set_current_request_details
     Current.user_agent = request.user_agent
     Current.ip_address = request.ip
