@@ -7,17 +7,17 @@ class CardPrinting < ApplicationRecord
 
   # Validations
   validates :collector_number, presence: true
-  validates :rarity, presence: true, inclusion: { in: %w[common uncommon rare mythic special bonus] }
+  validates :rarity, presence: true, inclusion: {in: %w[common uncommon rare mythic special bonus]}
   validates :border_color, presence: true
-  validates :card_id, uniqueness: { scope: [:card_set_id, :collector_number] }
+  validates :card_id, uniqueness: {scope: [:card_set_id, :collector_number]}
 
   # Scopes
   scope :by_rarity, ->(rarity) { where(rarity: rarity) }
-  scope :common, -> { by_rarity('common') }
-  scope :uncommon, -> { by_rarity('uncommon') }
-  scope :rare, -> { by_rarity('rare') }
-  scope :mythic, -> { by_rarity('mythic') }
-  scope :special, -> { by_rarity('special') }
+  scope :common, -> { by_rarity("common") }
+  scope :uncommon, -> { by_rarity("uncommon") }
+  scope :rare, -> { by_rarity("rare") }
+  scope :mythic, -> { by_rarity("mythic") }
+  scope :special, -> { by_rarity("special") }
 
   scope :foil_only, -> { where("'foil' = ANY(finishes) AND NOT ('nonfoil' = ANY(finishes))") }
   scope :nonfoil_only, -> { where("'nonfoil' = ANY(finishes) AND NOT ('foil' = ANY(finishes))") }
@@ -36,19 +36,19 @@ class CardPrinting < ApplicationRecord
 
   # Price helpers
   def price_usd
-    prices&.dig('usd')&.to_f
+    prices&.dig("usd")&.to_f
   end
 
   def price_usd_foil
-    prices&.dig('usd_foil')&.to_f
+    prices&.dig("usd_foil")&.to_f
   end
 
   def price_eur
-    prices&.dig('eur')&.to_f
+    prices&.dig("eur")&.to_f
   end
 
   def price_tix
-    prices&.dig('tix')&.to_f
+    prices&.dig("tix")&.to_f
   end
 
   def lowest_price
@@ -60,45 +60,45 @@ class CardPrinting < ApplicationRecord
   end
 
   # Image helpers
-  def image_uri(size = 'normal')
-    image_uris&.dig(size) || image_uris&.dig('normal')
+  def image_uri(size = "normal")
+    image_uris&.dig(size) || image_uris&.dig("normal")
   end
 
   def small_image
-    image_uri('small')
+    image_uri("small")
   end
 
   def normal_image
-    image_uri('normal')
+    image_uri("normal")
   end
 
   def large_image
-    image_uri('large')
+    image_uri("large")
   end
 
   def art_crop_image
-    image_uri('art_crop')
+    image_uri("art_crop")
   end
 
   def border_crop_image
-    image_uri('border_crop')
+    image_uri("border_crop")
   end
 
   # Finish helpers
   def foil_available?
-    finishes&.include?('foil')
+    finishes&.include?("foil")
   end
 
   def nonfoil_available?
-    finishes&.include?('nonfoil')
+    finishes&.include?("nonfoil")
   end
 
   def etched_available?
-    finishes&.include?('etched')
+    finishes&.include?("etched")
   end
 
   def glossy_available?
-    finishes&.include?('glossy')
+    finishes&.include?("glossy")
   end
 
   # Display helpers

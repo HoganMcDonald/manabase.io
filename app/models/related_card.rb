@@ -3,7 +3,7 @@
 class RelatedCard < ApplicationRecord
   # Associations
   belongs_to :card
-  belongs_to :related, class_name: 'Card', foreign_key: :related_card_id, optional: true
+  belongs_to :related, class_name: "Card", foreign_key: :related_card_id, optional: true
 
   # Constants
   COMPONENT_TYPES = %w[
@@ -20,40 +20,40 @@ class RelatedCard < ApplicationRecord
   validates :component, presence: true
   validates :name, presence: true
   validates :type_line, presence: true
-  validates :related_card_id, uniqueness: { scope: [:card_id, :component] }
+  validates :related_card_id, uniqueness: {scope: [:card_id, :component]}
 
   # Scopes
   scope :by_component, ->(component) { where(component: component) }
-  scope :tokens, -> { by_component('token') }
-  scope :meld_parts, -> { by_component('meld_part') }
-  scope :meld_results, -> { by_component('meld_result') }
-  scope :combo_pieces, -> { by_component('combo_piece') }
-  scope :variations, -> { by_component('variation_of') }
-  scope :paired_cards, -> { by_component('paired_with') }
+  scope :tokens, -> { by_component("token") }
+  scope :meld_parts, -> { by_component("meld_part") }
+  scope :meld_results, -> { by_component("meld_result") }
+  scope :combo_pieces, -> { by_component("combo_piece") }
+  scope :variations, -> { by_component("variation_of") }
+  scope :paired_cards, -> { by_component("paired_with") }
 
   # Helper methods
   def token?
-    component == 'token'
+    component == "token"
   end
 
   def meld_part?
-    component == 'meld_part'
+    component == "meld_part"
   end
 
   def meld_result?
-    component == 'meld_result'
+    component == "meld_result"
   end
 
   def combo_piece?
-    component == 'combo_piece'
+    component == "combo_piece"
   end
 
   def variation?
-    component == 'variation_of'
+    component == "variation_of"
   end
 
   def paired?
-    component == 'paired_with'
+    component == "paired_with"
   end
 
   # Find the actual related card if it exists in the database

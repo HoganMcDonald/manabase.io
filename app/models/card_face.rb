@@ -6,8 +6,8 @@ class CardFace < ApplicationRecord
 
   # Validations
   validates :name, presence: true
-  validates :face_index, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :face_index, uniqueness: { scope: :card_id }
+  validates :face_index, presence: true, numericality: {greater_than_or_equal_to: 0}
+  validates :face_index, uniqueness: {scope: :card_id}
 
   # Scopes
   default_scope { order(:face_index) }
@@ -28,8 +28,8 @@ class CardFace < ApplicationRecord
     printed_name || name
   end
 
-  def image_uri(size = 'normal')
-    image_uris&.dig(size) || image_uris&.dig('normal')
+  def image_uri(size = "normal")
+    image_uris&.dig(size) || image_uris&.dig("normal")
   end
 
   def mana_value
@@ -46,7 +46,7 @@ class CardFace < ApplicationRecord
   end
 
   def creature?
-    type_line&.downcase&.include?('creature')
+    type_line&.downcase&.include?("creature")
   end
 
   def has_power_toughness?

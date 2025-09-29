@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof:*)",
+      "Bash(bundle:*)",
+      "Bash(bin/rails runner:*)",
+      "Bash(docker-compose:*)",
+      "Bash(bin/setup:*)",
+      "Bash(pkill:*)",
+      "Bash(bin/rails:*)",
+      "WebFetch(domain:scryfall.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Read(//Users/hoganmcdonald/.asdf/installs/ruby/3.4.2/lib/ruby/gems/3.4.0/gems/mission_control-jobs-1.1.0/app/controllers/mission_control/jobs/**)",
+      "Read(//Users/hoganmcdonald/.asdf/installs/ruby/3.4.2/lib/ruby/gems/3.4.0/gems/mission_control-jobs-1.1.0/app/controllers/concerns/mission_control/jobs/**)",
+      "Bash(git commit:*)",
+      "Bash(ruby:*)",
+      "Bash(rails db:migrate:*)",
+      "Bash(git add:*)",
+      "Bash(bin/rake:*)",
+      "Bash(RAILS_ENV=test bundle exec rspec spec/models/scryfall_sync_spec.rb --format documentation --no-color)",
+      "Bash(npm run lint)",
+      "Bash(npm run check:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

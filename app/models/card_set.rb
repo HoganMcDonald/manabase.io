@@ -14,10 +14,10 @@ class CardSet < ApplicationRecord
   scope :released, -> { where.not(released_at: nil).order(released_at: :desc) }
   scope :upcoming, -> { where("released_at > ?", Date.current).order(:released_at) }
   scope :by_type, ->(type) { where(set_type: type) }
-  scope :core_sets, -> { by_type('core') }
-  scope :expansions, -> { by_type('expansion') }
-  scope :masters_sets, -> { by_type('masters') }
-  scope :draft_innovation, -> { by_type('draft_innovation') }
+  scope :core_sets, -> { by_type("core") }
+  scope :expansions, -> { by_type("expansion") }
+  scope :masters_sets, -> { by_type("masters") }
+  scope :draft_innovation, -> { by_type("draft_innovation") }
   scope :supplemental, -> { where(set_type: %w[commander planechase archenemy vanguard]) }
   scope :digital_only, -> { where(digital: true) }
   scope :paper_only, -> { where(digital: false) }

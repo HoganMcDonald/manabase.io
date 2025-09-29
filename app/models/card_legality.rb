@@ -33,17 +33,17 @@ class CardLegality < ApplicationRecord
   STATUSES = %w[legal not_legal restricted banned].freeze
 
   # Validations
-  validates :format, presence: true, inclusion: { in: FORMATS }
-  validates :status, presence: true, inclusion: { in: STATUSES }
-  validates :format, uniqueness: { scope: :card_id }
+  validates :format, presence: true, inclusion: {in: FORMATS}
+  validates :status, presence: true, inclusion: {in: STATUSES}
+  validates :format, uniqueness: {scope: :card_id}
 
   # Scopes
   scope :by_format, ->(format) { where(format: format) }
   scope :by_status, ->(status) { where(status: status) }
-  scope :legal, -> { by_status('legal') }
-  scope :banned, -> { by_status('banned') }
-  scope :restricted, -> { by_status('restricted') }
-  scope :not_legal, -> { by_status('not_legal') }
+  scope :legal, -> { by_status("legal") }
+  scope :banned, -> { by_status("banned") }
+  scope :restricted, -> { by_status("restricted") }
+  scope :not_legal, -> { by_status("not_legal") }
 
   # Format group scopes
   scope :eternal_formats, -> { where(format: %w[vintage legacy commander]) }
@@ -53,19 +53,19 @@ class CardLegality < ApplicationRecord
 
   # Helper methods
   def legal?
-    status == 'legal'
+    status == "legal"
   end
 
   def banned?
-    status == 'banned'
+    status == "banned"
   end
 
   def restricted?
-    status == 'restricted'
+    status == "restricted"
   end
 
   def not_legal?
-    status == 'not_legal'
+    status == "not_legal"
   end
 
   def eternal_format?

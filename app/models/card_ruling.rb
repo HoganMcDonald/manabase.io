@@ -15,10 +15,10 @@ class CardRuling < ApplicationRecord
   scope :recent_first, -> { order(published_at: :desc) }
   scope :oldest_first, -> { order(published_at: :asc) }
   scope :by_source, ->(source) { where(source: source) }
-  scope :wotc, -> { by_source('wotc') }
-  scope :scryfall, -> { by_source('scryfall') }
-  scope :since, ->(date) { where('published_at >= ?', date) }
-  scope :before, ->(date) { where('published_at <= ?', date) }
+  scope :wotc, -> { by_source("wotc") }
+  scope :scryfall, -> { by_source("scryfall") }
+  scope :since, ->(date) { where("published_at >= ?", date) }
+  scope :before, ->(date) { where("published_at <= ?", date) }
 
   # Class methods to get rulings for a card
   def self.for_card(card)
@@ -31,11 +31,11 @@ class CardRuling < ApplicationRecord
   end
 
   def official?
-    source == 'wotc'
+    source == "wotc"
   end
 
   def community?
-    source == 'scryfall'
+    source == "scryfall"
   end
 
   def age_in_days

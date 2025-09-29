@@ -47,6 +47,10 @@ class ScryfallSyncJob < ApplicationJob
     sync.save!
 
     Rails.logger.info "Successfully synced #{sync.sync_type} version #{remote_version}"
+
+    # Queue the processing job
+    ScryfallProcessingJob.perform_later(sync.id)
+    Rails.logger.info "Queued processing job for #{sync.sync_type} sync #{sync.id}"
   rescue StandardError => e
     Rails.logger.error "ScryfallSyncJob failed for sync #{sync_id}: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")

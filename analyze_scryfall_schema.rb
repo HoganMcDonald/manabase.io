@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-require 'json'
-require 'set'
+require "json"
+require "set"
 
 class ScryfallSchemaAnalyzer
   def initialize
@@ -15,7 +16,7 @@ class ScryfallSchemaAnalyzer
   def analyze_file(filepath)
     puts "Analyzing: #{filepath}"
 
-    File.open(filepath, 'r') do |file|
+    File.open(filepath, "r") do |file|
       parser = JSON::Stream::Parser.new
       current_object = {}
       in_array = false
@@ -73,7 +74,7 @@ class ScryfallSchemaAnalyzer
       line.strip!
 
       # Detect start of main array
-      if !in_main_array && line.start_with?('[')
+      if !in_main_array && line.start_with?("[")
         in_main_array = true
         line = line[1..-1].strip
       end
@@ -81,7 +82,7 @@ class ScryfallSchemaAnalyzer
       next if line.empty? || !in_main_array
 
       # Handle end of array
-      if line.end_with?(']')
+      if line.end_with?("]")
         line = line[0..-2].strip
         in_main_array = false if object_depth == 0
       end
@@ -89,15 +90,15 @@ class ScryfallSchemaAnalyzer
       line_buffer += line
 
       # Count braces to track object boundaries
-      object_depth += line.count('{') - line.count('}')
+      object_depth += line.count("{") - line.count("}")
 
       # When we have a complete object
-      if object_depth == 0 && line_buffer.include?('{')
+      if object_depth == 0 && line_buffer.include?("{")
         # Remove trailing comma if present
-        line_buffer = line_buffer.rstrip.chomp(',')
+        line_buffer = line_buffer.rstrip.chomp(",")
 
         begin
-          if line_buffer.start_with?('{') && line_buffer.end_with?('}')
+          if line_buffer.start_with?("{") && line_buffer.end_with?("}")
             object = JSON.parse(line_buffer)
             analyze_object(object)
             @total_objects += 1
@@ -140,28 +141,28 @@ class ScryfallSchemaAnalyzer
       case value
       when NilClass
         @field_info[field_path][:nullable] = true
-        @field_info[field_path][:types] << 'null'
+        @field_info[field_path][:types] << "null"
       when String
-        @field_info[field_path][:types] << 'string'
+        @field_info[field_path][:types] << "string"
         add_sample_value(field_path, value)
       when Integer
-        @field_info[field_path][:types] << 'integer'
+        @field_info[field_path][:types] << "integer"
         update_min_max(field_path, value)
       when Float
-        @field_info[field_path][:types] << 'float'
+        @field_info[field_path][:types] << "float"
         update_min_max(field_path, value)
       when TrueClass, FalseClass
-        @field_info[field_path][:types] << 'boolean'
+        @field_info[field_path][:types] << "boolean"
         add_sample_value(field_path, value.to_s)
       when Array
-        @field_info[field_path][:types] << 'array'
+        @field_info[field_path][:types] << "array"
         @field_info[field_path][:is_array] = true
 
         # Analyze array elements
         value.each do |element|
           case element
           when Hash
-            @field_info[field_path][:array_types] << 'object'
+            @field_info[field_path][:array_types] << "object"
             analyze_object(element, "#{field_path}[]")
           else
             @field_info[field_path][:array_types] << element.class.name.downcase
@@ -170,7 +171,7 @@ class ScryfallSchemaAnalyzer
 
         add_sample_value(field_path, "Array[#{value.size}]")
       when Hash
-        @field_info[field_path][:types] << 'object'
+        @field_info[field_path][:types] << "object"
         analyze_object(value, field_path)
       end
     end
@@ -193,7 +194,7 @@ class ScryfallSchemaAnalyzer
   end
 
   def generate_report(output_file)
-    File.open(output_file, 'w') do |f|
+    File.open(output_file, "w") do |f|
       f.puts "# Scryfall Data Schema Analysis"
       f.puts "# Total objects analyzed: #{@total_objects}"
       f.puts "# Generated at: #{Time.now}"
@@ -205,8 +206,8 @@ class ScryfallSchemaAnalyzer
       nested_fields = {}
 
       @field_info.each do |field_path, info|
-        if field_path.include?('.')
-          parent = field_path.split('.').first
+        if field_path.include?(".")
+          parent = field_path.split(".").first
           nested_fields[parent] ||= []
           nested_fields[parent] << [field_path, info]
         else
@@ -243,8 +244,8 @@ class ScryfallSchemaAnalyzer
           f.puts "  Nested Schema:"
           nested_fields[field].sort_by { |k, _| k }.each do |nested_field, nested_info|
             nested_occurrence = (nested_info[:count].to_f / info[:count] * 100).round(2)
-            indent = "    " * (nested_field.count('.') + 1)
-            field_name = nested_field.split('.').last
+            indent = "    " * (nested_field.count(".") + 1)
+            field_name = nested_field.split(".").last
 
             f.puts "#{indent}#{field_name}:"
             f.puts "#{indent}  Occurrence in parent: #{nested_occurrence}%"
@@ -298,7 +299,7 @@ end
 
 # Check if json-stream gem is available, if not use alternative parsing
 begin
-  require 'json/stream'
+  require "json/stream"
 rescue LoadError
   puts "json-stream gem not found. Using alternative line-by-line parsing."
   puts "For better performance, install: gem install json-stream"

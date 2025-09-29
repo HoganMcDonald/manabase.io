@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Scryfall
   class BulkData < Base
     self.element_name = "bulk-data"

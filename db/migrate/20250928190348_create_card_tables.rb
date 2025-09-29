@@ -3,12 +3,12 @@
 class CreateCardTables < ActiveRecord::Migration[8.0]
   def change
     # Enable required extensions
-    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
-    enable_extension 'pg_trgm' unless extension_enabled?('pg_trgm')
+    enable_extension "pgcrypto" unless extension_enabled?("pgcrypto")
+    enable_extension "pg_trgm" unless extension_enabled?("pg_trgm")
 
     # Card Sets table
     create_table :card_sets, id: :uuid do |t|
-      t.string :code, null: false, index: { unique: true }
+      t.string :code, null: false, index: {unique: true}
       t.string :name, null: false
       t.string :set_type, null: false
       t.date :released_at
@@ -31,9 +31,9 @@ class CreateCardTables < ActiveRecord::Migration[8.0]
 
     # Main Cards table (Oracle data)
     create_table :cards, id: :uuid do |t|
-      t.uuid :oracle_id, null: false, index: { unique: true }
+      t.uuid :oracle_id, null: false, index: {unique: true}
       t.string :name, null: false, index: true
-      t.string :lang, default: 'en'
+      t.string :lang, default: "en"
       t.date :released_at
       t.string :uri
       t.string :scryfall_uri
@@ -153,7 +153,7 @@ class CreateCardTables < ActiveRecord::Migration[8.0]
 
       t.timestamps
 
-      t.index [:card_id, :card_set_id, :collector_number], unique: true, name: 'idx_printings_unique'
+      t.index [:card_id, :card_set_id, :collector_number], unique: true, name: "idx_printings_unique"
       t.index :rarity
       t.index :artist
       t.index :prices, using: :gin
@@ -227,7 +227,7 @@ class CreateCardTables < ActiveRecord::Migration[8.0]
 
       t.timestamps
 
-      t.index [:card_id, :related_card_id, :component], unique: true, name: 'idx_related_unique'
+      t.index [:card_id, :related_card_id, :component], unique: true, name: "idx_related_unique"
       t.index :related_card_id
     end
 

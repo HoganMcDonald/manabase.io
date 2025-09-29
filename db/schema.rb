@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_28_190348) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -218,6 +218,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_190348) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "cancelled_at"
+    t.integer "total_records"
+    t.integer "processed_records", default: 0
+    t.integer "failed_batches", default: 0
+    t.string "processing_status"
+    t.datetime "processing_started_at"
+    t.datetime "processing_completed_at"
+    t.integer "last_processed_batch"
+    t.integer "batch_size", default: 500
+    t.index ["processing_status"], name: "index_scryfall_syncs_on_processing_status"
     t.index ["status"], name: "index_scryfall_syncs_on_status"
     t.index ["sync_type", "version"], name: "index_scryfall_syncs_on_sync_type_and_version", unique: true
     t.index ["sync_type"], name: "index_scryfall_syncs_on_sync_type"
