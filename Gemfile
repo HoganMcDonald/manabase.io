@@ -95,4 +95,25 @@ group :test do
   # Synchronize Capybara commands with application JavaScript and AJAX requests
   gem "capybara-lockstep"
   gem "selenium-webdriver"
+
+  # Database cleaning strategies for test suite
+  gem "database_cleaner-active_record"
+
+  # Mock web requests for external API testing
+  gem "webmock"
+
+  # Generate fake data for tests
+  gem "faker"
+
+  # Time manipulation for testing time-dependent code
+  gem "timecop"
+
+  # Better test output formatting
+  gem "rspec-its"
+
+  # Shoulda matchers for Rails testing
+  gem "shoulda-matchers"
+
+  # Code coverage
+  gem "simplecov", require: false
 end
