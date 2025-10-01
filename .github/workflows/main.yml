@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  backend:
+    name: Backend Tests & Linting
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Setup database
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/manabase_test
+        RAILS_ENV: test
+      run: |
+        bundle exec rails db:create
+        bundle exec rails db:schema:load
+
+    - name: Run RuboCop
+      run: bundle exec rubocop
+
+    - name: Run RSpec tests with coverage
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/manabase_test
+        RAILS_ENV: test
+        REDIS_URL: redis://localhost:6379/0
+        COVERAGE: true
+      run: bundle exec rspec --format progress
+
+  frontend:
+    name: Frontend Linting & Type Checking
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run TypeScript type checking
+      run: npm run check
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Check Prettier formatting
+      run: npm run format
+
+    - name: Build assets
+      run: npm run build
+
+  integration:
+    name: Full Stack Integration
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install frontend dependencies
+      run: npm ci
+
+    - name: Build frontend assets
+      run: npm run build
+
+    - name: Setup database
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/manabase_test
+        RAILS_ENV: test
+      run: |
+        bundle exec rails db:create
+        bundle exec rails db:schema:load
+
+    - name: Precompile assets
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/manabase_test
+        RAILS_ENV: test
+      run: bundle exec rails assets:precompile
+
+    - name: Run system tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/manabase_test
+        RAILS_ENV: test
+        REDIS_URL: redis://localhost:6379/0
+      run: bundle exec rspec spec/system --format progress

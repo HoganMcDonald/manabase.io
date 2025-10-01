@@ -27,6 +27,29 @@ Rails.application.routes.draw do
     inertia :appearance
   end
 
+  namespace :admin do
+    get :dashboard, to: "dashboard#index"
+
+    resources :scryfall_syncs, only: [:index, :show], defaults: {format: :json} do
+      collection do
+        get :progress
+        post :start
+      end
+      member do
+        post :cancel
+        post :retry
+      end
+    end
+
+    resources :failures, only: [:index] do
+      collection do
+        post :clear
+      end
+    end
+
+    root to: "dashboard#index"
+  end
+
   root "home#index"
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

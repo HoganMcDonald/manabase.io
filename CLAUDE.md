@@ -1,0 +1,136 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+### Development
+
+```bash
+# Start the application (includes Vite, Rails server, and Docker services)
+bin/dev
+
+# Start background job worker (if needed for Solid Queue jobs)
+bin/jobs start
+
+# Setup the application initially
+bin/setup
+
+# Rails console
+bin/rails console
+```
+
+### Testing
+
+```bash
+# Run all RSpec tests
+bundle exec rspec
+
+# Run specific test file with detailed output
+RAILS_ENV=test bundle exec rspec spec/models/scryfall_sync_spec.rb --format documentation --no-color
+
+# Run with test coverage report
+COVERAGE=true bundle exec rspec
+```
+
+### Code Quality
+
+```bash
+# TypeScript type checking
+npm run check
+
+# JavaScript/TypeScript linting
+npm run lint
+npm run lint:fix
+
+# Code formatting with Prettier
+npm run format
+npm run format:fix
+
+# Ruby linting with RuboCop (autocorrect enabled by default)
+rake
+# or explicitly
+rake rubocop:autocorrect
+```
+
+### Scryfall Data Sync
+
+```bash
+# Sync specific data types
+rake scryfall:sync:oracle_cards   # Core card data
+rake scryfall:sync:rulings        # Card rulings
+rake scryfall:sync:default_cards  # One printing per card
+rake scryfall:sync:unique_artwork # Unique artwork cards
+rake scryfall:sync:all_cards     # All printings (large dataset)
+
+# Check sync status
+rake scryfall:status
+
+# Process already downloaded data
+rake scryfall:process[oracle_cards]
+```
+
+## Architecture
+
+### Stack Overview
+
+- **Backend**: Rails 8 with PostgreSQL, Redis, and Solid Queue for background jobs
+- **Frontend**: React with TypeScript, Inertia.js for SSR, Vite for bundling
+- **UI Components**: Radix UI primitives with Tailwind CSS
+- **Testing**: RSpec for backend, comprehensive factory and fixture setup
+
+### Key Architectural Patterns
+
+1. **Inertia.js Integration**: Pages are React components served via Rails controllers using `inertia` render method. Props are passed from controllers to React pages seamlessly.
+
+2. **Background Job Processing**: Uses Solid Queue with three job types:
+   - `ScryfallSyncJob`: Downloads bulk data files
+   - `ScryfallProcessingJob`: Orchestrates batch processing
+   - `ScryfallBatchImportJob`: Imports data in parallel batches
+
+3. **State Machine Pattern**: `ScryfallSync` model uses AASM for state transitions (pending → downloading → completed/failed)
+
+4. **Service Objects**: Card data mapping logic is extracted to service objects in `app/services/scryfall/` for testability and separation of concerns
+
+5. **Batch Processing**: Large datasets are processed in configurable batches (default 500 records) to manage memory usage and enable parallel processing
+
+### Data Model
+
+Core models for Magic: The Gathering data:
+- `Card`: Oracle card data (canonical version)
+- `CardSet`: Sets and expansions
+- `CardPrinting`: Individual printings of cards
+- `CardFace`: Multi-faced card data
+- `CardRuling`: Official rulings
+- `CardLegality`: Format legalities
+- `RelatedCard`: Card relationships (tokens, meld, etc.)
+- `ScryfallSync`: Tracks sync operations with progress
+
+### Frontend Structure
+
+- `app/frontend/pages/`: Inertia page components
+- `app/frontend/components/`: Reusable UI components
+- `app/frontend/layouts/`: Layout wrappers
+- `app/frontend/hooks/`: Custom React hooks
+- `app/frontend/lib/`: Utility functions and helpers
+
+### Authentication
+
+Uses authentication-zero with bcrypt for user authentication, including:
+- Session-based authentication
+- Email verification flow
+- Password reset functionality
+- Multiple session management
+
+### Background Job Monitoring
+
+Mission Control Jobs mounted at `/jobs` for monitoring Solid Queue jobs, providing visibility into job processing, failures, and performance.
+
+## Database
+
+Uses PostgreSQL with Docker Compose for development. The database includes:
+- Solid Cache for Rails caching
+- Solid Queue for background job storage
+- Solid Cable for Action Cable support
+
+Docker services are automatically started with `bin/dev`.
