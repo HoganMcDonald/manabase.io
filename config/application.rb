@@ -38,8 +38,9 @@ module ReactStarterKit
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    # Add services to autoload paths
+    # Add services to autoload and eager load paths for background jobs
     config.autoload_paths << Rails.root.join("app/services")
+    config.eager_load_paths << Rails.root.join("app/services")
 
     # Don't generate system test files.
     config.generators.system_tests = nil

@@ -22,9 +22,13 @@ void createInertiaApp({
     const pages = import.meta.glob<ResolvedComponent>("../pages/**/*.tsx", {
       eager: true,
     })
-    const page = pages[`../pages/${name}.tsx`]
+    // Try direct file first, then index.tsx pattern
+    let page = pages[`../pages/${name}.tsx`]
     if (!page) {
-      console.error(`Missing Inertia page component: '${name}.tsx'`)
+      page = pages[`../pages/${name}/index.tsx`]
+    }
+    if (!page) {
+      console.error(`Missing Inertia page component: '${name}.tsx' or '${name}/index.tsx'`)
     }
 
     // To use a default layout, import the Layout component
