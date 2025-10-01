@@ -10,6 +10,7 @@ module Scryfall
       card = Card.find_or_initialize_by(oracle_id: data["oracle_id"])
 
       card.assign_attributes(
+        scryfall_id: UuidValidator.validate_and_log(data["id"], record_type: "oracle_card", record_id: data["oracle_id"], field: "scryfall_id"),
         name: data["name"],
         lang: data["lang"] || "en",
         released_at: data["released_at"],
@@ -55,7 +56,13 @@ module Scryfall
         cardmarket_id: data["cardmarket_id"],
         prints_search_uri: data["prints_search_uri"],
         rulings_uri: data["rulings_uri"],
-        scryfall_set_uri: data["scryfall_set_uri"]
+        scryfall_set_uri: data["scryfall_set_uri"],
+        card_back_id: UuidValidator.validate_and_log(data["card_back_id"], record_type: "oracle_card", record_id: data["oracle_id"], field: "card_back_id"),
+        game_changer: data["game_changer"] || false,
+        content_warning: data["content_warning"] || false,
+        variation_of: data["variation_of"],
+        purchase_uris: data["purchase_uris"] || {},
+        related_uris: data["related_uris"] || {}
       )
 
       card.save!
@@ -66,8 +73,8 @@ module Scryfall
       # Import legalities
       import_legalities(card, data["legalities"]) if data["legalities"]
 
-      # Import related cards
-      import_related_cards(card, data["all_parts"]) if data["all_parts"]
+      # Import related cards - Only import if card was saved successfully
+      import_related_cards(card, data["all_parts"]) if data["all_parts"] && card.persisted?
 
       card
     end
@@ -81,8 +88,9 @@ module Scryfall
 
       # Update card with oracle data if this is the first time we see it
       if card.new_record?
-        import_oracle_card(data)
-        card.reload
+        # Don't call import_oracle_card - it creates a different Card object!
+        # Instead, use the returned card from import_oracle_card
+        card = import_oracle_card(data)
       end
 
       # Create the printing
@@ -93,13 +101,14 @@ module Scryfall
       )
 
       printing.assign_attributes(
+        scryfall_id: UuidValidator.validate_and_log(data["id"], record_type: "card_printing", record_id: data["id"], field: "scryfall_id"),
         rarity: data["rarity"],
         watermark: data["watermark"],
         printed_name: data["printed_name"],
         printed_text: data["printed_text"],
         printed_type_line: data["printed_type_line"],
         artist: data["artist"],
-        artist_id: data["artist_ids"]&.first,
+        artist_ids: data["artist_ids"] || [],
         illustration_id: data["illustration_id"],
         border_color: data["border_color"],
         frame: data["frame"],
@@ -117,7 +126,12 @@ module Scryfall
         frame_effects: data["frame_effects"] || [],
         finishes: data["finishes"] || [],
         multiverse_ids: data["multiverse_ids"] || [],
-        attraction_lights: data["attraction_lights"] || []
+        attraction_lights: data["attraction_lights"] || [],
+        card_back_id: UuidValidator.validate_and_log(data["card_back_id"], record_type: "card_printing", record_id: data["id"], field: "card_back_id"),
+        content_warning: data["content_warning"] || false,
+        variation_of: data["variation_of"],
+        purchase_uris: data["purchase_uris"] || {},
+        related_uris: data["related_uris"] || {}
       )
 
       printing.save!
@@ -127,15 +141,28 @@ module Scryfall
     private
 
     def find_or_create_set(data)
-      CardSet.find_or_create_by(code: data["set"]) do |set|
-        set.name = data["set_name"]
-        set.set_type = data["set_type"]
-        set.released_at = data["released_at"]
-        set.scryfall_uri = data["scryfall_set_uri"]
-        set.uri = data["set_uri"]
-        set.search_uri = data["set_search_uri"]
-        set.digital = data["digital"] || false
-      end
+      set = CardSet.find_or_initialize_by(code: data["set"])
+
+      # Update set data with latest information
+      set.assign_attributes(
+        name: data["set_name"],
+        set_type: data["set_type"],
+        released_at: data["released_at"],
+        scryfall_uri: data["scryfall_set_uri"],
+        uri: data["set_uri"],
+        search_uri: data["set_search_uri"],
+        digital: data["digital"] || false,
+        icon_svg_uri: data["icon_svg_uri"],
+        parent_set_code: data["parent_set_code"],
+        block_code: data["block_code"],
+        block: data["block"],
+        foil_only: data["foil_only"] || false,
+        nonfoil_only: data["nonfoil_only"] || false,
+        tcgplayer_id: data["tcgplayer_id"]
+      )
+
+      set.save!
+      set
     end
 
     def import_card_faces(card, faces_data)
@@ -155,7 +182,7 @@ module Scryfall
           defense: face_data["defense"],
           flavor_text: face_data["flavor_text"],
           artist: face_data["artist"],
-          artist_id: face_data["artist_id"],
+          artist_ids: face_data["artist_ids"] || [],
           illustration_id: face_data["illustration_id"],
           image_uris: face_data["image_uris"] || {},
           flavor_name: face_data["flavor_name"],
@@ -172,6 +199,9 @@ module Scryfall
 
     def import_legalities(card, legalities_data)
       legalities_data.each do |format, status|
+        # Skip non-string keys (ActiveJob adds _aj_symbol_keys during serialization)
+        next unless format.is_a?(String) && status.is_a?(String)
+
         legality = card.card_legalities.find_or_initialize_by(format: format)
         legality.status = status
         legality.save!
@@ -180,14 +210,20 @@ module Scryfall
 
     def import_related_cards(card, parts_data)
       parts_data.each do |part|
-        next if part["id"] == card.id # Skip self-reference
+        # Skip self-reference - use scryfall_id for comparison
+        next if part["id"] == card.scryfall_id
+
+        # Use scryfall_id as the unique identifier for related cards
+        validated_id = UuidValidator.validate_and_log(part["id"], record_type: "related_card", record_id: card.oracle_id, field: "scryfall_id")
+        next unless validated_id # Skip if UUID is invalid
 
         related = card.related_cards.find_or_initialize_by(
-          related_card_id: part["id"],
+          scryfall_id: validated_id,
           component: part["component"]
         )
 
         related.assign_attributes(
+          related_card_id: validated_id,  # Keep for backward compatibility
           name: part["name"],
           type_line: part["type_line"],
           uri: part["uri"]
