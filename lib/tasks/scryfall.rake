@@ -197,8 +197,8 @@ namespace :scryfall do
   end
 
   def analyze_bulk_data(bulk_data_type)
-    require 'json'
-    require 'yaml'
+    require "json"
+    require "yaml"
 
     # Find the latest completed sync for this type
     latest_sync = ScryfallSync.by_type(bulk_data_type).completed.order(completed_at: :desc).first
@@ -210,7 +210,7 @@ namespace :scryfall do
     end
 
     source_file = latest_sync.file_path
-    output_file = source_file.sub(/\.json$/, '_structure.yml')
+    output_file = source_file.sub(/\.json$/, "_structure.yml")
 
     puts "\nAnalyzing #{bulk_data_type} structure..."
     puts "Source: #{source_file}"
@@ -225,9 +225,9 @@ namespace :scryfall do
 
     # First pass: count total records for progress tracking
     puts "\nCounting records..."
-    File.open(source_file, 'r') do |file|
+    File.open(source_file, "r") do |file|
       file.each_line do |line|
-        total_records += 1 if line.strip.start_with?('{')
+        total_records += 1 if line.strip.start_with?("{")
       end
     end
     puts "Total records: #{total_records}"
@@ -236,16 +236,16 @@ namespace :scryfall do
     # Second pass: analyze structure
     current_record = 0
 
-    File.open(source_file, 'r') do |file|
+    File.open(source_file, "r") do |file|
       file.each_line do |line|
         line = line.strip
-        next if line.empty? || line == '[' || line == ']'
+        next if line.empty? || line == "[" || line == "]"
 
         # Remove trailing comma if present
-        line = line.chomp(',') if line.end_with?(',')
+        line = line.chomp(",") if line.end_with?(",")
 
         # Skip if not a JSON object
-        next unless line.start_with?('{') && line.end_with?('}')
+        next unless line.start_with?("{") && line.end_with?("}")
 
         current_record += 1
 
@@ -299,7 +299,7 @@ namespace :scryfall do
 
   def analyze_record_structure(record, structure, path = [])
     record.each do |key, value|
-      field_path = (path + [key]).join('.')
+      field_path = (path + [key]).join(".")
       field_path = key if path.empty?
 
       structure[field_path] ||= {
@@ -314,39 +314,39 @@ namespace :scryfall do
       # Determine type and handle nested structures
       case value
       when NilClass
-        structure[field_path][:types] << 'null'
+        structure[field_path][:types] << "null"
       when String
-        structure[field_path][:types] << 'string'
+        structure[field_path][:types] << "string"
         if structure[field_path][:sample_values].size < 3 && !structure[field_path][:sample_values].include?(value)
           structure[field_path][:sample_values] << value.truncate(50)
         end
       when Integer
-        structure[field_path][:types] << 'integer'
+        structure[field_path][:types] << "integer"
         if structure[field_path][:sample_values].size < 3
           structure[field_path][:sample_values] << value
         end
       when Float
-        structure[field_path][:types] << 'float'
+        structure[field_path][:types] << "float"
         if structure[field_path][:sample_values].size < 3
           structure[field_path][:sample_values] << value
         end
       when TrueClass, FalseClass
-        structure[field_path][:types] << 'boolean'
+        structure[field_path][:types] << "boolean"
         structure[field_path][:sample_values] << value if structure[field_path][:sample_values].size < 2
       when Hash
-        structure[field_path][:types] << 'object'
+        structure[field_path][:types] << "object"
         analyze_record_structure(value, structure, path + [key])
       when Array
-        structure[field_path][:types] << 'array'
+        structure[field_path][:types] << "array"
         structure[field_path][:array_size] ||= []
         structure[field_path][:array_size] << value.size
 
         # Analyze array element types
         value.each do |element|
           if element.is_a?(Hash)
-            analyze_record_structure(element, structure, path + [key, '[]'])
+            analyze_record_structure(element, structure, path + [key, "[]"])
           elsif !element.nil?
-            array_element_path = (path + [key, '[]']).join('.')
+            array_element_path = (path + [key, "[]"]).join(".")
             structure[array_element_path] ||= {
               types: Set.new,
               count: 0,
@@ -363,37 +363,37 @@ namespace :scryfall do
 
   def convert_to_final_structure(structure, total_records)
     result = {
-      'metadata' => {
-        'total_records' => total_records,
-        'analyzed_at' => Time.now.iso8601,
-        'fields_count' => structure.keys.size
+      "metadata" => {
+        "total_records" => total_records,
+        "analyzed_at" => Time.now.iso8601,
+        "fields_count" => structure.keys.size
       },
-      'fields' => {}
+      "fields" => {}
     }
 
     structure.each do |field_path, info|
       field_info = {
-        'types' => info[:types].to_a.sort,
-        'occurrence_rate' => "#{(info[:count].to_f / total_records * 100).round(2)}%",
-        'occurrences' => info[:count],
-        'required' => info[:count] == total_records
+        "types" => info[:types].to_a.sort,
+        "occurrence_rate" => "#{(info[:count].to_f / total_records * 100).round(2)}%",
+        "occurrences" => info[:count],
+        "required" => info[:count] == total_records
       }
 
-      field_info['sample_values'] = info[:sample_values] unless info[:sample_values].empty?
+      field_info["sample_values"] = info[:sample_values] unless info[:sample_values].empty?
 
       if info[:array_size] && !info[:array_size].empty?
-        field_info['array_stats'] = {
-          'min_size' => info[:array_size].min,
-          'max_size' => info[:array_size].max,
-          'avg_size' => (info[:array_size].sum.to_f / info[:array_size].size).round(2)
+        field_info["array_stats"] = {
+          "min_size" => info[:array_size].min,
+          "max_size" => info[:array_size].max,
+          "avg_size" => (info[:array_size].sum.to_f / info[:array_size].size).round(2)
         }
       end
 
-      result['fields'][field_path] = field_info
+      result["fields"][field_path] = field_info
     end
 
     # Sort fields for readability
-    result['fields'] = result['fields'].sort.to_h
+    result["fields"] = result["fields"].sort.to_h
 
     result
   end
