@@ -122,6 +122,80 @@ class ScryfallSync < ApplicationRecord
     ((processed_records.to_f / total_records) * 100).round(2)
   end
 
+  def add_failure_log(error_message, batch_number = nil, context = {})
+    log_entry = {
+      timestamp: Time.current.iso8601,
+      error: error_message,
+      batch_number: batch_number,
+      context: context
+    }
+
+    # Keep only the last 100 failure logs to prevent unbounded growth
+    self.failure_logs ||= []
+    self.failure_logs << log_entry
+    self.failure_logs = failure_logs.last(100)
+
+    # Update error summary
+    update_error_summary(error_message, context)
+
+    save
+  end
+
+  def update_error_summary(error_message, context = {})
+    self.error_summary ||= {}
+
+    # Track error types
+    error_type = context[:error_class] || "unknown"
+    self.error_summary[error_type] ||= 0
+    self.error_summary[error_type] += 1
+
+    # Track specific error patterns
+    if error_message.include?("UUID")
+      self.invalid_uuid_count ||= 0
+      self.invalid_uuid_count += 1
+    end
+
+    # Track validation errors separately
+    if context[:validation_errors].present?
+      self.error_summary["validation_errors"] ||= {}
+      context[:validation_errors].each do |ve|
+        self.error_summary["validation_errors"][ve] ||= 0
+        self.error_summary["validation_errors"][ve] += 1
+      end
+    end
+  end
+
+  def add_warning(warning_message, context = {})
+    self.warning_count ||= 0
+    self.warning_count += 1
+
+    Rails.logger.warn "ScryfallSync ##{id}: #{warning_message} - #{context.inspect}"
+  end
+
+  def clear_failure_logs
+    update(failure_logs: [])
+  end
+
+  def job_progress
+    return {total: 0, completed: 0, failed: 0, pending: 0} unless processing?
+
+    all_jobs = processing_jobs
+    total = all_jobs.count
+    completed = associated_jobs.where.not(finished_at: nil).count
+    failed = SolidQueue::FailedExecution.where(
+      job_id: associated_jobs.pluck(:id)
+    ).count
+    pending = total - completed
+
+    {
+      total: total,
+      completed: completed,
+      failed: failed,
+      pending: pending,
+      percentage: total > 0 ? ((completed.to_f / total) * 100).round(2) : 0
+    }
+  end
+
   def estimated_completion_time
     return nil unless processing_started_at && processed_records > 0 && total_records
 

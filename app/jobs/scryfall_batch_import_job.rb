@@ -26,6 +26,16 @@ class ScryfallBatchImportJob < ApplicationJob
     Rails.logger.error "Batch #{batch_number} failed for #{sync_type}: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
     @sync.increment!(:failed_batches)
+    @sync.add_failure_log(
+      e.message,
+      batch_number,
+      {
+        sync_type: sync_type,
+        records_count: records.size,
+        error_class: e.class.name,
+        backtrace: e.backtrace.first(5)
+      }
+    )
     raise
   end
 
@@ -33,31 +43,134 @@ class ScryfallBatchImportJob < ApplicationJob
 
   def process_oracle_cards(records)
     mapper = Scryfall::CardMapper.new
+    failed_count = 0
+    success_count = 0
 
     records.each do |record|
       mapper.import_oracle_card(record)
+      success_count += 1
     rescue StandardError => e
+      failed_count += 1
       Rails.logger.error "Failed to import oracle card #{record['oracle_id']}: #{e.message}"
+      # Log only the first 5 failures per batch to avoid overwhelming the logs
+      if failed_count <= 5
+        @sync.add_failure_log(
+          "Failed to import oracle card: #{e.message}",
+          @batch_number,
+          {
+            oracle_id: record["oracle_id"],
+            card_name: record["name"],
+            error_class: e.class.name,
+            backtrace: e.backtrace.first(3)
+          }
+        )
+      end
     end
+
+    Rails.logger.info "Batch #{@batch_number}: Processed #{success_count} oracle cards, #{failed_count} failures"
   end
 
   def process_card_printings(records)
     mapper = Scryfall::CardMapper.new
+    failed_count = 0
+    success_count = 0
+    error_summary = Hash.new(0)
 
-    records.each do |record|
+    records.each_with_index do |record, index|
       mapper.import_card_printing(record)
+      success_count += 1
+    rescue ActiveRecord::RecordInvalid => e
+      failed_count += 1
+      error_summary["validation_error"] += 1
+      Rails.logger.error "Validation failed for card printing #{record['id']}: #{e.message}"
+      # Log validation errors with full context
+      if failed_count <= 5
+        @sync.add_failure_log(
+          "Validation failed: #{e.message}",
+          @batch_number,
+          {
+            record_index: index,
+            card_id: record["id"],
+            oracle_id: record["oracle_id"],
+            card_name: record["name"],
+            set_code: record["set"],
+            collector_number: record["collector_number"],
+            error_class: e.class.name,
+            validation_errors: e.record.errors.full_messages,
+            backtrace: e.backtrace.first(3)
+          }
+        )
+      end
     rescue StandardError => e
+      failed_count += 1
+      error_summary[e.class.name] += 1
       Rails.logger.error "Failed to import card printing #{record['id']}: #{e.message}"
+      # Log other errors with context
+      if failed_count <= 5
+        @sync.add_failure_log(
+          "Import failed: #{e.message}",
+          @batch_number,
+          {
+            record_index: index,
+            card_id: record["id"],
+            oracle_id: record["oracle_id"],
+            card_name: record["name"],
+            set_code: record["set"],
+            collector_number: record["collector_number"],
+            error_class: e.class.name,
+            backtrace: e.backtrace.first(3)
+          }
+        )
+      end
+    end
+
+    # Log batch summary with error breakdown
+    summary_msg = "Batch #{@batch_number}: Processed #{success_count} printings, #{failed_count} failures"
+    if failed_count > 0
+      summary_msg += " (#{error_summary.map { |k, v| "#{k}: #{v}" }.join(', ')})"
+    end
+    Rails.logger.info summary_msg
+
+    # Add batch summary to sync if there were failures
+    if failed_count > 0
+      @sync.add_failure_log(
+        "Batch summary: #{failed_count} failures",
+        @batch_number,
+        {
+          success_count: success_count,
+          failed_count: failed_count,
+          error_breakdown: error_summary,
+          batch_size: records.size
+        }
+      )
     end
   end
 
   def process_rulings(records)
     mapper = Scryfall::RulingMapper.new
+    failed_count = 0
+    success_count = 0
 
     records.each do |record|
       mapper.import_ruling(record)
+      success_count += 1
     rescue StandardError => e
+      failed_count += 1
       Rails.logger.error "Failed to import ruling for #{record['oracle_id']}: #{e.message}"
+      # Log only the first 5 failures per batch to avoid overwhelming the logs
+      if failed_count <= 5
+        @sync.add_failure_log(
+          "Failed to import ruling: #{e.message}",
+          @batch_number,
+          {
+            oracle_id: record["oracle_id"],
+            source: record["source"],
+            error_class: e.class.name
+          }
+        )
+      end
     end
+
+    Rails.logger.info "Batch #{@batch_number}: Processed #{success_count} rulings, #{failed_count} failures"
   end
 end

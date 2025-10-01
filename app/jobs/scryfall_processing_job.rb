@@ -18,7 +18,9 @@ class ScryfallProcessingJob < ApplicationJob
     # Start processing
     @sync.start_processing!
 
-    process_file_in_batches(@sync.file_path, @sync.batch_size || 500)
+    # Use smaller batch size for all_cards to avoid memory issues
+    batch_size = @sync.sync_type == "all_cards" ? 100 : (@sync.batch_size || 250)
+    process_file_in_batches(@sync.file_path, batch_size)
 
     # Mark processing as completed
     @sync.complete_processing!
@@ -103,5 +105,19 @@ class ScryfallProcessingJob < ApplicationJob
       batch_number: batch_number,
       records: batch
     )
+
+    # For large datasets, throttle job creation to avoid overwhelming the queue
+    if @sync.sync_type == "all_cards" && batch_number % 10 == 0
+      # Check queue depth and wait if too many jobs are pending
+      pending_count = SolidQueue::Job.where(
+        class_name: "ScryfallBatchImportJob",
+        finished_at: nil
+      ).count
+
+      if pending_count > 50
+        Rails.logger.info "Throttling: #{pending_count} jobs pending, waiting..."
+        sleep(2)
+      end
+    end
   end
 end
