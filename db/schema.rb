@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_01_012049) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -31,7 +31,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.string "defense"
     t.text "flavor_text"
     t.string "artist"
-    t.string "artist_id"
     t.string "illustration_id"
     t.jsonb "image_uris", default: {}
     t.string "flavor_name"
@@ -42,6 +41,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.string "layout"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "artist_ids", default: [], comment: "Array of artist IDs"
     t.index ["card_id", "face_index"], name: "index_card_faces_on_card_id_and_face_index", unique: true
     t.index ["card_id"], name: "index_card_faces_on_card_id"
     t.index ["name"], name: "index_card_faces_on_name"
@@ -68,7 +68,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.text "printed_text"
     t.string "printed_type_line"
     t.string "artist"
-    t.string "artist_id"
     t.string "illustration_id"
     t.string "border_color", null: false
     t.string "frame"
@@ -89,12 +88,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.jsonb "attraction_lights", default: []
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "scryfall_id", comment: "Scryfall's unique printing ID"
+    t.uuid "card_back_id", comment: "ID of the card back for this printing"
+    t.boolean "content_warning", default: false
+    t.uuid "variation_of"
+    t.jsonb "purchase_uris", default: {}, comment: "Purchase links for this printing"
+    t.jsonb "related_uris", default: {}, comment: "Related URIs for this printing"
+    t.jsonb "artist_ids", default: [], comment: "Array of artist IDs"
     t.index ["artist"], name: "index_card_printings_on_artist"
+    t.index ["card_back_id"], name: "index_card_printings_on_card_back_id"
     t.index ["card_id", "card_set_id", "collector_number"], name: "idx_printings_unique", unique: true
     t.index ["card_id"], name: "index_card_printings_on_card_id"
     t.index ["card_set_id"], name: "index_card_printings_on_card_set_id"
     t.index ["prices"], name: "index_card_printings_on_prices", using: :gin
     t.index ["rarity"], name: "index_card_printings_on_rarity"
+    t.index ["scryfall_id"], name: "index_card_printings_on_scryfall_id", unique: true
   end
 
   create_table "card_rulings", force: :cascade do |t|
@@ -125,6 +133,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.string "search_uri"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "parent_set_code"
+    t.integer "tcgplayer_id"
     t.index ["code"], name: "index_card_sets_on_code", unique: true
     t.index ["released_at"], name: "index_card_sets_on_released_at"
     t.index ["set_type"], name: "index_card_sets_on_set_type"
@@ -180,6 +190,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.string "scryfall_set_uri"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "scryfall_id", comment: "Scryfall's unique card ID"
+    t.uuid "card_back_id", comment: "ID of the card back for double-faced cards"
+    t.boolean "game_changer", default: false, comment: "Whether this card is a game changer"
+    t.boolean "content_warning", default: false, comment: "Whether this card has content warnings"
+    t.uuid "variation_of", comment: "ID of the card this is a variation of"
+    t.jsonb "purchase_uris", default: {}, comment: "Purchase links (aggregated from printings)"
+    t.jsonb "related_uris", default: {}, comment: "Related URIs (aggregated)"
+    t.index ["card_back_id"], name: "index_cards_on_card_back_id"
     t.index ["cmc"], name: "index_cards_on_cmc"
     t.index ["color_identity"], name: "index_cards_on_color_identity", using: :gin
     t.index ["colors"], name: "index_cards_on_colors", using: :gin
@@ -188,7 +206,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.index ["oracle_id"], name: "index_cards_on_oracle_id", unique: true
     t.index ["oracle_text"], name: "index_cards_on_oracle_text", opclass: :gin_trgm_ops, using: :gin
     t.index ["released_at"], name: "index_cards_on_released_at"
+    t.index ["scryfall_id"], name: "index_cards_on_scryfall_id", unique: true
     t.index ["type_line"], name: "index_cards_on_type_line"
+    t.index ["variation_of"], name: "index_cards_on_variation_of"
   end
 
   create_table "related_cards", force: :cascade do |t|
@@ -200,9 +220,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.string "uri"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "scryfall_id", comment: "Scryfall's ID for the related card"
     t.index ["card_id", "related_card_id", "component"], name: "idx_related_unique", unique: true
     t.index ["card_id"], name: "index_related_cards_on_card_id"
     t.index ["related_card_id"], name: "index_related_cards_on_related_card_id"
+    t.index ["scryfall_id"], name: "index_related_cards_on_scryfall_id"
   end
 
   create_table "scryfall_syncs", force: :cascade do |t|
@@ -226,10 +248,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
     t.datetime "processing_completed_at"
     t.integer "last_processed_batch"
     t.integer "batch_size", default: 500
+    t.jsonb "failure_logs", default: []
+    t.jsonb "error_summary", default: {}
+    t.integer "invalid_uuid_count", default: 0
+    t.integer "warning_count", default: 0
+    t.index ["failure_logs"], name: "index_scryfall_syncs_on_failure_logs", using: :gin
+    t.index ["invalid_uuid_count"], name: "index_scryfall_syncs_on_invalid_uuid_count"
     t.index ["processing_status"], name: "index_scryfall_syncs_on_processing_status"
     t.index ["status"], name: "index_scryfall_syncs_on_status"
     t.index ["sync_type", "version"], name: "index_scryfall_syncs_on_sync_type_and_version", unique: true
     t.index ["sync_type"], name: "index_scryfall_syncs_on_sync_type"
+    t.index ["warning_count"], name: "index_scryfall_syncs_on_warning_count"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -378,7 +407,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_235948) do
   add_foreign_key "card_printings", "card_sets"
   add_foreign_key "card_printings", "cards"
   add_foreign_key "related_cards", "cards"
-  add_foreign_key "related_cards", "cards", column: "related_card_id"
   add_foreign_key "sessions", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
