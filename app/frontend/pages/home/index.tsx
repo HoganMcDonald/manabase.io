@@ -2,7 +2,6 @@ import { Head, Link, usePage } from "@inertiajs/react"
 import { Search } from "lucide-react"
 
 import { CardGrid } from "@/components/card/grid"
-import { SearchAutocomplete } from "@/components/search-autocomplete"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useSearch } from "@/hooks/use-search"
@@ -23,13 +22,9 @@ function SearchContent() {
     query,
     setQuery,
     searchResults,
-    suggestions,
     isLoading,
-    showSuggestions,
-    setShowSuggestions,
     totalResults,
     handleSearch,
-    handleSuggestionClick,
   } = useSearch()
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,14 +67,6 @@ function SearchContent() {
               />
             </div>
           </form>
-
-          {/* Autocomplete Suggestions */}
-          <SearchAutocomplete
-            suggestions={suggestions}
-            show={showSuggestions}
-            onSuggestionClick={handleSuggestionClick}
-            onClose={() => setShowSuggestions(false)}
-          />
         </div>
 
         {/* Search Results */}
