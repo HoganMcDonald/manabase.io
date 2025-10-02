@@ -148,6 +148,12 @@ GEM
       railties (>= 6.1.0)
     faker (3.5.2)
       i18n (>= 1.8.11, < 2)
+    faraday (2.14.0)
+      faraday-net_http (>= 2.0, < 3.5)
+      json
+      logger
+    faraday-net_http (3.4.1)
+      net-http (>= 0.5.0)
     fast_blank (1.0.1)
     fugit (1.11.2)
       et-orbi (~> 1, >= 1.2.11)
@@ -219,7 +225,10 @@ GEM
       stimulus-rails
       turbo-rails
     msgpack (1.8.0)
+    multi_json (1.17.0)
     mutex_m (0.3.0)
+    net-http (0.6.0)
+      uri
     net-imap (0.5.10)
       date
       net-protocol
@@ -252,6 +261,9 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.10-x86_64-linux-musl)
       racc (~> 1.4)
+    opensearch-ruby (3.4.0)
+      faraday (>= 1.0, < 3)
+      multi_json (>= 1.0)
     ostruct (0.6.3)
     parallel (1.27.0)
     parser (3.3.9.0)
@@ -493,6 +505,7 @@ DEPENDENCIES
   kamal
   letter_opener
   mission_control-jobs
+  opensearch-ruby
   pg (~> 1.5.9)
   propshaft
   puma (>= 5.0)

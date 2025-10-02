@@ -70,6 +70,25 @@ rake scryfall:status
 rake scryfall:process[oracle_cards]
 ```
 
+### OpenSearch Card Search
+
+```bash
+# Setup and manage OpenSearch index
+rake opensearch:setup           # Create index with mappings
+rake opensearch:reindex         # Reindex all cards
+rake opensearch:reset          # Delete and recreate index
+rake opensearch:status         # Check index health and stats
+rake opensearch:test_connection # Verify OpenSearch connectivity
+rake opensearch:delete         # Remove index
+
+# Admin dashboard for monitoring
+# Visit /admin/open_search_syncs (requires admin login)
+
+# API endpoints (no authentication required)
+# GET /api/cards/autocomplete?q=lightning
+# GET /api/cards/search?q=dragon&colors[]=R&cmc_min=4&cmc_max=6
+```
+
 ## Architecture
 
 ### Stack Overview

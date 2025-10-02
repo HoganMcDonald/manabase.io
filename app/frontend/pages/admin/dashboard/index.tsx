@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
-import { useState, useEffect, useCallback } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Package, Layers, Database, RefreshCw, AlertCircle, CheckCircle, Clock, Play, Download } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Database, Download, Layers, Package, Play, RefreshCw, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import AppLayout from '@/layouts/app-layout';
 
 interface DashboardProps {
   stats: {
@@ -24,16 +25,17 @@ interface DashboardProps {
     card_legalities_count: number;
     related_cards_count: number;
     scryfall_syncs_count: number;
+    open_search_syncs_count: number;
   };
-  recent_users: Array<{
+  recent_users: {
     id: number;
     name: string;
     email: string;
     created_at: string;
     verified: boolean;
     admin: boolean;
-  }>;
-  sync_status: Array<{
+  }[];
+  sync_status: {
     sync_type: string;
     status: string;
     version: string | null;
@@ -41,7 +43,25 @@ interface DashboardProps {
     processing_status: string | null;
     total_records: number | null;
     processed_records: number | null;
-  }>;
+  }[];
+  open_search_sync_status: {
+    recent_sync: {
+      id: number;
+      status: string;
+      total_cards: number;
+      indexed_cards: number;
+      failed_cards: number;
+      progress_percentage: number;
+      started_at: string | null;
+      completed_at: string | null;
+      duration_formatted: string | null;
+      error_message: string | null;
+    } | null;
+    index_stats: {
+      document_count?: number;
+      size_in_bytes?: number;
+    };
+  };
 }
 
 interface LiveSyncData {
@@ -71,12 +91,12 @@ interface SyncDetails {
     sync_type: string;
     status: string;
     error_message: string | null;
-    failure_logs: Array<{
+    failure_logs: {
       timestamp: string;
       error: string;
       batch_number: number | null;
       context: Record<string, any>;
-    }>;
+    }[];
     job_progress: {
       total: number;
       completed: number;
@@ -87,13 +107,14 @@ interface SyncDetails {
   };
 }
 
-export default function Dashboard({ stats, recent_users, sync_status }: DashboardProps) {
+export default function Dashboard({ stats, recent_users, sync_status, open_search_sync_status }: DashboardProps) {
   const [liveSyncs, setLiveSyncs] = useState<LiveSyncData[]>([]);
   const [selectedSync, setSelectedSync] = useState<number | null>(null);
   const [syncDetails, setSyncDetails] = useState<SyncDetails | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [syncToStart, setSyncToStart] = useState<string | null>(null);
   const [isStartingSyncs, setIsStartingSyncs] = useState<Record<string, boolean>>({});
+  const [isStartingOpenSearchReindex, setIsStartingOpenSearchReindex] = useState(false);
 
   // Fetch live sync progress
   const fetchSyncProgress = useCallback(async () => {
@@ -444,6 +465,131 @@ export default function Dashboard({ stats, recent_users, sync_status }: Dashboar
                     )}
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* OpenSearch Index Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle>OpenSearch Index Status</CardTitle>
+              <CardDescription>Card search index status and reindexing</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Index Stats */}
+                <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Indexed Cards</p>
+                    <p className="text-lg font-bold">
+                      {(open_search_sync_status.index_stats.document_count ?? 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Index Size</p>
+                    <p className="text-lg font-bold">
+                      {((open_search_sync_status.index_stats.size_in_bytes ?? 0) / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+
+                {/* Recent Sync Status */}
+                {open_search_sync_status.recent_sync ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Last Reindex</p>
+                      {getStatusBadge(open_search_sync_status.recent_sync.status)}
+                    </div>
+
+                    {/* Progress Bar */}
+                    {open_search_sync_status.recent_sync.status === 'indexing' && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>
+                            {open_search_sync_status.recent_sync.indexed_cards.toLocaleString()}/
+                            {open_search_sync_status.recent_sync.total_cards.toLocaleString()} cards
+                          </span>
+                          <span>{open_search_sync_status.recent_sync.progress_percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{ width: `${open_search_sync_status.recent_sync.progress_percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Completed Info */}
+                    {open_search_sync_status.recent_sync.status === 'completed' && (
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>Completed: {open_search_sync_status.recent_sync.completed_at}</p>
+                        <p>Duration: {open_search_sync_status.recent_sync.duration_formatted}</p>
+                        <p>Cards indexed: {open_search_sync_status.recent_sync.indexed_cards.toLocaleString()}</p>
+                      </div>
+                    )}
+
+                    {/* Error Info */}
+                    {open_search_sync_status.recent_sync.error_message && (
+                      <div className="rounded-lg border border-destructive bg-destructive/10 p-2">
+                        <p className="text-xs text-destructive">{open_search_sync_status.recent_sync.error_message}</p>
+                      </div>
+                    )}
+
+                    {/* Failed Cards Warning */}
+                    {open_search_sync_status.recent_sync.failed_cards > 0 && (
+                      <div className="flex items-center gap-2 text-xs text-yellow-600">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{open_search_sync_status.recent_sync.failed_cards} cards failed to index</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No reindex operations yet</p>
+                )}
+
+                {/* Reindex Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={isStartingOpenSearchReindex || open_search_sync_status.recent_sync?.status === 'indexing'}
+                  onClick={async () => {
+                    setIsStartingOpenSearchReindex(true);
+                    try {
+                      const response = await fetch('/admin/open_search_syncs', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                      });
+                      const data = await response.json();
+                      if (response.ok) {
+                        window.location.reload();
+                      } else {
+                        alert(data.error || 'Failed to start reindex');
+                      }
+                    } catch (error) {
+                      console.error('Failed to start reindex:', error);
+                      alert('Failed to start reindex');
+                    } finally {
+                      setIsStartingOpenSearchReindex(false);
+                    }
+                  }}
+                >
+                  {isStartingOpenSearchReindex ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Start Reindex
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>

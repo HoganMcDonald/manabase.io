@@ -41,6 +41,12 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :open_search_syncs, only: [:index, :show, :create, :destroy], defaults: {format: :json} do
+      collection do
+        get :progress
+      end
+    end
+
     resources :failures, only: [:index] do
       collection do
         post :clear
@@ -48,6 +54,15 @@ Rails.application.routes.draw do
     end
 
     root to: "dashboard#index"
+  end
+
+  namespace :api do
+    resources :cards, only: [] do
+      collection do
+        get :autocomplete
+        get :search
+      end
+    end
   end
 
   root "home#index"

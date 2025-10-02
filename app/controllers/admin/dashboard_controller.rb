@@ -13,6 +13,7 @@ class Admin::DashboardController < InertiaController
     @card_legalities_count = CardLegality.count
     @related_cards_count = RelatedCard.count
     @scryfall_syncs_count = ScryfallSync.count
+    @open_search_syncs_count = OpenSearchSync.count
     @recent_users = User.order(created_at: :desc).limit(5)
 
     render inertia: "admin/dashboard", props: {
@@ -25,7 +26,8 @@ class Admin::DashboardController < InertiaController
         card_rulings_count: @card_rulings_count,
         card_legalities_count: @card_legalities_count,
         related_cards_count: @related_cards_count,
-        scryfall_syncs_count: @scryfall_syncs_count
+        scryfall_syncs_count: @scryfall_syncs_count,
+        open_search_syncs_count: @open_search_syncs_count
       },
       recent_users: @recent_users.map { |user|
         {
@@ -60,7 +62,31 @@ class Admin::DashboardController < InertiaController
             processed_records: nil
           }
         end
-      }
+      },
+      open_search_sync_status: open_search_sync_status_data
+    }
+  end
+
+  private
+
+  def open_search_sync_status_data
+    recent_sync = OpenSearchSync.recent.first
+    index_stats = Search::CardIndexer.new.index_stats
+
+    {
+      recent_sync: recent_sync ? {
+        id: recent_sync.id,
+        status: recent_sync.status,
+        total_cards: recent_sync.total_cards,
+        indexed_cards: recent_sync.indexed_cards,
+        failed_cards: recent_sync.failed_cards,
+        progress_percentage: recent_sync.progress_percentage,
+        started_at: recent_sync.started_at&.strftime("%B %d, %Y %H:%M"),
+        completed_at: recent_sync.completed_at&.strftime("%B %d, %Y %H:%M"),
+        duration_formatted: recent_sync.duration_formatted,
+        error_message: recent_sync.error_message
+      } : nil,
+      index_stats: index_stats
     }
   end
 end

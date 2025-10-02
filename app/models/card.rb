@@ -9,6 +9,10 @@ class Card < ApplicationRecord
   has_many :related_cards, dependent: :destroy
   has_many :related_to, class_name: "RelatedCard", foreign_key: :related_card_id
 
+  # OpenSearch indexing callbacks
+  after_commit :index_in_opensearch, on: [:create, :update]
+  after_commit :remove_from_opensearch, on: :destroy
+
   # Validations
   validates :oracle_id, presence: true, uniqueness: true
   validates :name, presence: true
@@ -130,5 +134,15 @@ class Card < ApplicationRecord
 
   def legendary?
     type_line.downcase.include?("legendary")
+  end
+
+  private
+
+  def index_in_opensearch
+    OpenSearchCardUpdateJob.perform_later(id, "index")
+  end
+
+  def remove_from_opensearch
+    OpenSearchCardUpdateJob.perform_later(id, "delete")
   end
 end

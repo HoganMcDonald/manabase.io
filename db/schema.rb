@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_01_012049) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_01_200354) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -209,6 +209,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_012049) do
     t.index ["scryfall_id"], name: "index_cards_on_scryfall_id", unique: true
     t.index ["type_line"], name: "index_cards_on_type_line"
     t.index ["variation_of"], name: "index_cards_on_variation_of"
+  end
+
+  create_table "open_search_syncs", force: :cascade do |t|
+    t.string "status", default: "pending", null: false
+    t.integer "total_cards", default: 0
+    t.integer "indexed_cards", default: 0
+    t.integer "failed_cards", default: 0
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_open_search_syncs_on_created_at"
+    t.index ["status"], name: "index_open_search_syncs_on_status"
   end
 
   create_table "related_cards", force: :cascade do |t|
