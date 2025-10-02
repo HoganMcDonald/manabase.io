@@ -7,6 +7,13 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --magic-white-background: 43.81, 81.82%, 84.9%;
+  --magic-blue-background: 210.55, 56.7%, 80.98%;
+  --magic-black-background: 13.33, 4.81%, 63.33%;
+  --magic-red-background: 16.57, 72.41%, 71.57%;
+  --magic-green-background: 140.36, 38.89%, 71.76%;
+  --magic-colorless-background: 10, 10.53%, 77.65%;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -43,6 +50,13 @@
 }
 
 .dark {
+  --magic-white-background: 43.81, 81.82%, 84.9%;
+  --magic-blue-background: 210.55, 56.7%, 80.98%;
+  --magic-black-background: 13.33, 4.81%, 63.33%;
+  --magic-red-background: 16.57, 72.41%, 71.57%;
+  --magic-green-background: 140.36, 38.89%, 71.76%;
+  --magic-colorless-background: 10, 10.53%, 77.65%;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
@@ -102,6 +116,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-magic-white-bg: hsl(var(--magic-white-background));
+  --color-magic-blue-bg: hsl(var(--magic-blue-background));
+  --color-magic-black-bg: hsl(var(--magic-black-background));
+  --color-magic-red-bg: hsl(var(--magic-red-background));
+  --color-magic-green-bg: hsl(var(--magic-green-background));
+  --color-magic-colorless-bg: hsl(var(--magic-colorless-background));
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
