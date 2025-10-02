@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react"
-import { BookOpen, Folder, LayoutGrid, Shield } from "lucide-react"
+import { BookOpen, Folder, LayoutGrid, Search, Shield } from "lucide-react"
 
 import { NavFooter } from "@/components/nav-footer"
 import { NavMain } from "@/components/nav-main"
@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { dashboardPath } from "@/routes"
+import { dashboardPath, rootPath } from "@/routes"
 import type { NavItem, SharedData } from "@/types"
 
 import AppLogo from "./app-logo"
@@ -35,6 +35,11 @@ export function AppSidebar() {
   const { auth } = usePage<SharedData>().props
 
   const mainNavItems: NavItem[] = [
+    {
+      title: "Search",
+      href: rootPath(),
+      icon: Search,
+    },
     {
       title: "Dashboard",
       href: dashboardPath(),

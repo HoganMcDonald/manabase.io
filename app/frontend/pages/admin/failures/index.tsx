@@ -1,10 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
+import { AlertCircle, ChevronRight, Search, X } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Search, X, ChevronRight } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import AppLayout from '@/layouts/app-layout';
 
 interface FailureLog {
   id: string;
@@ -44,12 +45,12 @@ interface FailuresProps {
   failures: FailureLog[];
   total_failures: number;
   error_summary: ErrorSummary[];
-  syncs_with_failures: Array<{
+  syncs_with_failures: {
     id: number;
     sync_type: string;
     failure_count: number;
     last_updated: string;
-  }>;
+  }[];
 }
 
 export default function Failures({ failures, total_failures, error_summary, syncs_with_failures }: FailuresProps) {
