@@ -47,6 +47,18 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :search_evals, only: [:index, :show, :create, :destroy], defaults: {format: :json} do
+      collection do
+        get :progress
+      end
+    end
+
+    resources :embedding_runs, only: [:index, :show, :create, :destroy], defaults: {format: :json} do
+      collection do
+        get :progress
+      end
+    end
+
     resources :failures, only: [:index] do
       collection do
         post :clear

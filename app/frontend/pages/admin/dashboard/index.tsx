@@ -26,6 +26,8 @@ interface DashboardProps {
     related_cards_count: number;
     scryfall_syncs_count: number;
     open_search_syncs_count: number;
+    search_evals_count: number;
+    embedding_runs_count: number;
   };
   recent_users: {
     id: number;
@@ -60,6 +62,46 @@ interface DashboardProps {
     index_stats: {
       document_count?: number;
       size_in_bytes?: number;
+    };
+  };
+  search_eval_status: {
+    recent_eval: {
+      id: number;
+      status: string;
+      eval_type: string;
+      total_queries: number;
+      completed_queries: number;
+      failed_queries: number;
+      progress_percentage: number;
+      avg_precision: number | null;
+      avg_recall: number | null;
+      avg_mrr: number | null;
+      avg_ndcg: number | null;
+      use_llm_judge: boolean;
+      started_at: string | null;
+      completed_at: string | null;
+      duration_formatted: string | null;
+      error_message: string | null;
+    } | null;
+  };
+  embedding_run_status: {
+    recent_run: {
+      id: number;
+      status: string;
+      total_cards: number;
+      processed_cards: number;
+      failed_cards: number;
+      batch_size: number;
+      progress_percentage: number;
+      started_at: string | null;
+      completed_at: string | null;
+      duration_formatted: string | null;
+      error_message: string | null;
+    } | null;
+    embedding_coverage: {
+      total_cards: number;
+      cards_with_embeddings: number;
+      percentage: number;
     };
   };
 }
@@ -107,7 +149,7 @@ interface SyncDetails {
   };
 }
 
-export default function Dashboard({ stats, recent_users, sync_status, open_search_sync_status }: DashboardProps) {
+export default function Dashboard({ stats, recent_users, sync_status, open_search_sync_status, search_eval_status, embedding_run_status }: DashboardProps) {
   const [liveSyncs, setLiveSyncs] = useState<LiveSyncData[]>([]);
   const [selectedSync, setSelectedSync] = useState<number | null>(null);
   const [syncDetails, setSyncDetails] = useState<SyncDetails | null>(null);
@@ -115,6 +157,10 @@ export default function Dashboard({ stats, recent_users, sync_status, open_searc
   const [syncToStart, setSyncToStart] = useState<string | null>(null);
   const [isStartingSyncs, setIsStartingSyncs] = useState<Record<string, boolean>>({});
   const [isStartingOpenSearchReindex, setIsStartingOpenSearchReindex] = useState(false);
+  const [isStartingSearchEval, setIsStartingSearchEval] = useState(false);
+  const [isStartingEmbeddingRun, setIsStartingEmbeddingRun] = useState(false);
+  const [evalTypeToStart, setEvalTypeToStart] = useState<'keyword' | 'semantic' | 'hybrid'>('keyword');
+  const [useLLMJudge, setUseLLMJudge] = useState(false);
 
   // Fetch live sync progress
   const fetchSyncProgress = useCallback(async () => {
@@ -587,6 +633,265 @@ export default function Dashboard({ stats, recent_users, sync_status, open_searc
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Start Reindex
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Search Quality Evals */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search Quality Evals</CardTitle>
+              <CardDescription>Evaluate search quality with test queries</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {search_eval_status.recent_eval ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Last Eval ({search_eval_status.recent_eval.eval_type})</p>
+                      {getStatusBadge(search_eval_status.recent_eval.status)}
+                    </div>
+
+                    {/* Progress Bar */}
+                    {search_eval_status.recent_eval.status === 'running' && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>
+                            {search_eval_status.recent_eval.completed_queries}/
+                            {search_eval_status.recent_eval.total_queries} queries
+                          </span>
+                          <span>{search_eval_status.recent_eval.progress_percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{ width: `${search_eval_status.recent_eval.progress_percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Metrics */}
+                    {search_eval_status.recent_eval.status === 'completed' && (
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <p className="text-muted-foreground">Precision@10</p>
+                          <p className="font-bold">{search_eval_status.recent_eval.avg_precision?.toFixed(3)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Recall@10</p>
+                          <p className="font-bold">{search_eval_status.recent_eval.avg_recall?.toFixed(3)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">MRR</p>
+                          <p className="font-bold">{search_eval_status.recent_eval.avg_mrr?.toFixed(3)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">NDCG@10</p>
+                          <p className="font-bold">{search_eval_status.recent_eval.avg_ndcg?.toFixed(3)}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Info */}
+                    {search_eval_status.recent_eval.error_message && (
+                      <div className="rounded-lg border border-destructive bg-destructive/10 p-2">
+                        <p className="text-xs text-destructive">{search_eval_status.recent_eval.error_message}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No eval runs yet</p>
+                )}
+
+                {/* Start Eval Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={isStartingSearchEval || search_eval_status.recent_eval?.status === 'running'}
+                  onClick={async () => {
+                    const evalType = evalTypeToStart;
+                    setIsStartingSearchEval(true);
+                    try {
+                      const response = await fetch('/admin/search_evals', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                        body: JSON.stringify({ eval_type: evalType, use_llm_judge: useLLMJudge }),
+                      });
+                      const data = await response.json();
+                      if (response.ok) {
+                        window.location.reload();
+                      } else {
+                        alert(data.error || 'Failed to start eval');
+                      }
+                    } catch (error) {
+                      console.error('Failed to start eval:', error);
+                      alert('Failed to start eval');
+                    } finally {
+                      setIsStartingSearchEval(false);
+                    }
+                  }}
+                >
+                  {isStartingSearchEval ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Run Eval (keyword)
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Embedding Generation */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Semantic Search Embeddings</CardTitle>
+              <CardDescription>Generate vector embeddings for semantic search</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Embedding Coverage Stats */}
+                <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cards with Embeddings</p>
+                      <p className="text-lg font-bold">
+                        {embedding_run_status.embedding_coverage.cards_with_embeddings.toLocaleString()}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {' '}/ {embedding_run_status.embedding_coverage.total_cards.toLocaleString()}
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Coverage</p>
+                      <p className="text-lg font-bold">
+                        {embedding_run_status.embedding_coverage.percentage}%
+                      </p>
+                    </div>
+                  </div>
+                  {/* Coverage Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${
+                          embedding_run_status.embedding_coverage.percentage === 100
+                            ? 'bg-green-600'
+                            : embedding_run_status.embedding_coverage.percentage > 50
+                            ? 'bg-primary'
+                            : 'bg-yellow-600'
+                        }`}
+                        style={{ width: `${embedding_run_status.embedding_coverage.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {embedding_run_status.recent_run ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Last Run</p>
+                      {getStatusBadge(embedding_run_status.recent_run.status)}
+                    </div>
+
+                    {/* Progress Bar */}
+                    {embedding_run_status.recent_run.status === 'processing' && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>
+                            {embedding_run_status.recent_run.processed_cards.toLocaleString()}/
+                            {embedding_run_status.recent_run.total_cards.toLocaleString()} cards
+                          </span>
+                          <span>{embedding_run_status.recent_run.progress_percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{ width: `${embedding_run_status.recent_run.progress_percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Completed Info */}
+                    {embedding_run_status.recent_run.status === 'completed' && (
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>Completed: {embedding_run_status.recent_run.completed_at}</p>
+                        <p>Duration: {embedding_run_status.recent_run.duration_formatted}</p>
+                        <p>Cards processed: {embedding_run_status.recent_run.processed_cards.toLocaleString()}</p>
+                      </div>
+                    )}
+
+                    {/* Error Info */}
+                    {embedding_run_status.recent_run.error_message && (
+                      <div className="rounded-lg border border-destructive bg-destructive/10 p-2">
+                        <p className="text-xs text-destructive">{embedding_run_status.recent_run.error_message}</p>
+                      </div>
+                    )}
+
+                    {/* Failed Cards Warning */}
+                    {embedding_run_status.recent_run.failed_cards > 0 && (
+                      <div className="flex items-center gap-2 text-xs text-yellow-600">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{embedding_run_status.recent_run.failed_cards} cards failed</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No embedding runs yet</p>
+                )}
+
+                {/* Start Embedding Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={isStartingEmbeddingRun || embedding_run_status.recent_run?.status === 'processing'}
+                  onClick={async () => {
+                    setIsStartingEmbeddingRun(true);
+                    try {
+                      const response = await fetch('/admin/embedding_runs', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                      });
+                      const data = await response.json();
+                      if (response.ok) {
+                        window.location.reload();
+                      } else {
+                        alert(data.error || 'Failed to start embedding generation');
+                      }
+                    } catch (error) {
+                      console.error('Failed to start embedding generation:', error);
+                      alert('Failed to start embedding generation');
+                    } finally {
+                      setIsStartingEmbeddingRun(false);
+                    }
+                  }}
+                >
+                  {isStartingEmbeddingRun ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4 mr-2" />
+                      Generate Embeddings
                     </>
                   )}
                 </Button>
