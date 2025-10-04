@@ -318,12 +318,9 @@ RSpec.describe ScryfallSync, type: :model do
     let(:sync) { create(:scryfall_sync) }
 
     describe "#active_jobs" do
-      it "returns unfinished jobs associated with the sync" do
-        # This would need actual SolidQueue::Job records in a real test
-        # For now, we'll stub the behavior
-        mock_relation = double("ActiveRecord::Relation")
-        allow(SolidQueue::Job).to receive(:where).and_return(mock_relation)
-        allow(mock_relation).to receive(:where).and_return([])
+      it "returns empty array (Sidekiq uses status tracking instead)" do
+        # Sidekiq doesn't provide direct job querying like Solid Queue
+        # Jobs are tracked via the processing_status field
         expect(sync.active_jobs).to eq []
       end
     end
