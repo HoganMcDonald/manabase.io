@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class Card < ApplicationRecord
+  # Class attribute to control OpenSearch indexing during bulk operations
+  class_attribute :skip_opensearch_callbacks, default: false
+
   # Associations
   has_many :card_printings, dependent: :destroy
   has_many :card_sets, through: :card_printings
@@ -10,8 +13,8 @@ class Card < ApplicationRecord
   has_many :related_to, class_name: "RelatedCard", foreign_key: :related_card_id
 
   # OpenSearch indexing callbacks
-  after_commit :index_in_opensearch, on: [:create, :update]
-  after_commit :remove_from_opensearch, on: :destroy
+  after_commit :index_in_opensearch, on: [:create, :update], unless: :skip_opensearch_callbacks?
+  after_commit :remove_from_opensearch, on: :destroy, unless: :skip_opensearch_callbacks?
 
   # Validations
   validates :oracle_id, presence: true, uniqueness: true
@@ -134,6 +137,10 @@ class Card < ApplicationRecord
 
   def legendary?
     type_line.downcase.include?("legendary")
+  end
+
+  def skip_opensearch_callbacks?
+    self.class.skip_opensearch_callbacks
   end
 
   private

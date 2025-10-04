@@ -106,6 +106,8 @@ module Search
         settings: {
           number_of_shards: 1,
           number_of_replicas: 0,
+          # Enable k-NN for vector search
+          "index.knn": true,
           analysis: {
             analyzer: {
               card_name_autocomplete: {
@@ -216,11 +218,20 @@ module Search
             loyalty: {
               type: "keyword"
             },
-            # Future: semantic search vector field
-            # embedding: {
-            #   type: "dense_vector",
-            #   dims: 768
-            # },
+            # Semantic search vector field
+            embedding: {
+              type: "knn_vector",
+              dimension: 1536,
+              method: {
+                name: "hnsw",
+                space_type: "cosinesimil",
+                engine: "nmslib",
+                parameters: {
+                  ef_construction: 256, # Increased for better index quality (slower indexing, better recall)
+                  m: 24 # Increased for better recall at query time (more memory, better results)
+                }
+              }
+            },
             # Image data
             image_uris: {
               type: "object",
@@ -243,8 +254,9 @@ module Search
     end
 
     def card_document(card)
-      # Get first printing for image data
-      printing = card.card_printings.first
+      # Get first printing for image data, prioritizing non-foil variants
+      # Manually filter to avoid scope issues with preloaded associations
+      printing = card.card_printings.find { |p| p.finishes&.include?("nonfoil") } || card.card_printings.first
 
       # For multi-faced cards without image_uris on printings, use card_faces
       image_uris = if card.card_faces.any? && card.card_faces.first.image_uris.present?
@@ -255,11 +267,13 @@ module Search
         {}
       end
 
-      # Collect available finishes from printings
+      # Collect available finishes from printings, prioritizing nonfoil
       finishes = card.card_printings.flat_map { |p| p.finishes || [] }.uniq
       finishes = ["nonfoil"] if finishes.empty? # Default to nonfoil
+      # Put nonfoil first if available so it's the default finish
+      finishes = finishes.sort_by { |f| f == "nonfoil" ? 0 : 1 }
 
-      {
+      doc = {
         name: card.name,
         oracle_text: card.oracle_text,
         type_line: card.type_line,
@@ -280,6 +294,23 @@ module Search
         released_at: card.released_at,
         updated_at: card.updated_at
       }
+
+      # Generate embedding for semantic search (optional, gracefully handle failures)
+      # Skip if card already has embeddings generated (unless forced to regenerate)
+      should_generate = ENV["GENERATE_EMBEDDINGS"] == "true" &&
+                        (card.embeddings_generated_at.nil? || ENV["FORCE_REGENERATE_EMBEDDINGS"] == "true")
+
+      if should_generate
+        begin
+          embedding = EmbeddingService.embed_card(card)
+          doc[:embedding] = embedding if embedding.present?
+        rescue StandardError => e
+          Rails.logger.warn("Failed to generate embedding for card #{card.id}: #{e.message}")
+          # Continue without embedding
+        end
+      end
+
+      doc
     end
 
     def card_face_document(face)

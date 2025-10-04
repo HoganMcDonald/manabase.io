@@ -46,6 +46,9 @@ class ScryfallBatchImportJob < ApplicationJob
     failed_count = 0
     success_count = 0
 
+    # Disable OpenSearch callbacks during bulk import for performance
+    Card.skip_opensearch_callbacks = true
+
     records.each do |record|
       mapper.import_oracle_card(record)
       success_count += 1
@@ -68,6 +71,9 @@ class ScryfallBatchImportJob < ApplicationJob
     end
 
     Rails.logger.info "Batch #{@batch_number}: Processed #{success_count} oracle cards, #{failed_count} failures"
+  ensure
+    # Re-enable callbacks after batch completes
+    Card.skip_opensearch_callbacks = false
   end
 
   def process_card_printings(records)
@@ -75,6 +81,9 @@ class ScryfallBatchImportJob < ApplicationJob
     failed_count = 0
     success_count = 0
     error_summary = Hash.new(0)
+
+    # Disable OpenSearch callbacks during bulk import for performance
+    Card.skip_opensearch_callbacks = true
 
     records.each_with_index do |record, index|
       mapper.import_card_printing(record)
@@ -144,6 +153,9 @@ class ScryfallBatchImportJob < ApplicationJob
         }
       )
     end
+  ensure
+    # Re-enable callbacks after batch completes
+    Card.skip_opensearch_callbacks = false
   end
 
   def process_rulings(records)

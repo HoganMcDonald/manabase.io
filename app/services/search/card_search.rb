@@ -43,8 +43,19 @@ module Search
       []
     end
 
-    def search(query, filters: {}, page: 1, per_page: 20)
-      search_body = build_search_query(query, filters)
+    def search(query, filters: {}, page: 1, per_page: 20, search_mode: "auto")
+      # Determine which search mode to use
+      mode = determine_search_mode(query, search_mode)
+
+      search_body = case mode
+      when "semantic"
+        build_semantic_search_query(query, filters)
+      when "hybrid"
+        build_hybrid_search_query(query, filters)
+      else
+        build_search_query(query, filters)
+      end
+
       search_body[:from] = (page - 1) * per_page
       search_body[:size] = per_page
 
@@ -191,6 +202,8 @@ module Search
 
       results = hits.map do |hit|
         card_data = hit["_source"]
+        # Remove embedding from results to reduce payload size
+        card_data.delete("embedding")
         card_data.merge(
           id: hit["_id"],
           score: hit["_score"]
@@ -204,6 +217,212 @@ module Search
         per_page: per_page,
         total_pages: (total.to_f / per_page).ceil
       }
+    end
+
+    # Determine which search mode to use based on query and mode parameter
+    def determine_search_mode(query, search_mode)
+      return search_mode unless search_mode == "auto"
+      return "keyword" if query.blank?
+
+      query_lower = query.downcase
+      word_count = query.split.length
+
+      # Exact card name patterns - use keyword for precision
+      # Match patterns like "Lightning Bolt", "Black Lotus"
+      # Capitalized words or quoted strings suggest exact names
+      if query.match?(/^["'].*["']$/) || (word_count <= 4 && query.match?(/^[A-Z]/))
+        return "keyword"
+      end
+
+      # Effect-based queries - use hybrid for semantic + keyword
+      effect_phrases = [
+        "cards that", "cards with", "spells that", "creatures that",
+        "draw cards", "remove", "destroy", "exile", "counter",
+        "sacrifice", "discard", "mill", "tutor", "ramp",
+        "life gain", "lifelink", "flying", "trample", "haste",
+        "triggers", "when", "whenever", "enters the battlefield",
+        "dies", "attacks", "blocks"
+      ]
+      contains_effect = effect_phrases.any? { |phrase| query_lower.include?(phrase) }
+
+      # Question words indicate natural language queries
+      question_words = ["what", "how", "which", "who", "find me", "show me", "looking for"]
+      contains_question = question_words.any? { |word| query_lower.include?(word) }
+
+      # MTG slang/nicknames - use hybrid for semantic understanding
+      slang_terms = ["dork", "wrath", "counterspell", "removal", "board wipe", "ramp", "tutor"]
+      contains_slang = slang_terms.any? { |term| query_lower.include?(term) }
+
+      # Descriptive queries (adjectives + nouns) suggest semantic
+      descriptive_patterns = [
+        "cheap", "expensive", "powerful", "best", "good", "bad",
+        "fast", "slow", "efficient", "inefficient"
+      ]
+      contains_descriptive = descriptive_patterns.any? { |word| query_lower.include?(word) }
+
+      # Decision logic
+      if contains_effect || contains_question || contains_slang || contains_descriptive
+        "hybrid" # Natural language or effect-based queries benefit from both
+      elsif word_count > 5
+        "hybrid" # Longer queries likely descriptive
+      elsif word_count >= 2
+        "keyword" # Short multi-word queries likely card names or types
+      else
+        "keyword" # Single word searches (card names, types)
+      end
+    end
+
+    # Build a pure semantic search query using k-NN
+    def build_semantic_search_query(query, filters)
+      query_embedding = EmbeddingService.embed(query)
+
+      # Fall back to keyword search if embedding fails
+      return build_search_query(query, filters) if query_embedding.blank?
+
+      filter_clauses = build_filter_clauses(filters)
+
+      # Use k-NN with post-filtering for better semantic ranking
+      # Get more candidates (k=200) and then filter to allow semantic relevance to dominate
+      search_query = {
+        size: 20, # Will be overridden by caller
+        query: {
+          knn: {
+            embedding: {
+              vector: query_embedding,
+              k: 200 # Increased k to get more candidates before filtering
+            }
+          }
+        },
+        _source: {excludes: ["embedding"]}
+      }
+
+      # Apply filters as post-filter if any exist
+      # This preserves semantic ranking while still filtering results
+      if filter_clauses.any?
+        search_query[:post_filter] = {
+          bool: {
+            filter: filter_clauses
+          }
+        }
+      end
+
+      search_query
+    end
+
+    # Build a hybrid search query combining k-NN and keyword search
+    def build_hybrid_search_query(query, filters)
+      query_embedding = EmbeddingService.embed(query)
+
+      # Fall back to keyword search if embedding fails
+      return build_search_query(query, filters) if query_embedding.blank?
+
+      filter_clauses = build_filter_clauses(filters)
+
+      # Hybrid approach: Use script_score to combine k-NN similarity with keyword relevance
+      # This properly combines both signals into a single score
+      {
+        query: {
+          script_score: {
+            query: {
+              bool: {
+                should: [
+                  # Keyword search component
+                  {
+                    multi_match: {
+                      query: query,
+                      fields: ["name^3", "oracle_text", "type_line^2", "card_faces.name^2", "card_faces.oracle_text"],
+                      type: "best_fields",
+                      fuzziness: "AUTO"
+                    }
+                  }
+                ],
+                filter: filter_clauses,
+                minimum_should_match: 0 # Allow either keyword or semantic to match
+              }
+            },
+            script: {
+              source: """
+                double keywordScore = Math.max(_score, 0.1);
+                double vectorScore = cosineSimilarity(params.query_vector, 'embedding') + 1.0;
+                return (vectorScore * 3.0) + (keywordScore * 1.0);
+              """,
+              params: {
+                query_vector: query_embedding
+              }
+            }
+          }
+        },
+        _source: {excludes: ["embedding"]}
+      }
+    end
+
+    # Extract filter building logic for reuse
+    def build_filter_clauses(filters)
+      filter_clauses = []
+
+      # Color identity filter
+      if filters[:colors].present?
+        colors = Array(filters[:colors])
+        if filters[:color_match] == "exact"
+          filter_clauses << {terms: {color_identity: colors}}
+        else
+          colors.each do |color|
+            filter_clauses << {term: {color_identity: color}}
+          end
+        end
+      end
+
+      # CMC filters
+      if filters[:cmc_min].present? || filters[:cmc_max].present?
+        cmc_filter = {range: {cmc: {}}}
+        cmc_filter[:range][:cmc][:gte] = filters[:cmc_min].to_f if filters[:cmc_min].present?
+        cmc_filter[:range][:cmc][:lte] = filters[:cmc_max].to_f if filters[:cmc_max].present?
+        filter_clauses << cmc_filter
+      end
+
+      # Type line filter
+      if filters[:types].present?
+        Array(filters[:types]).each do |card_type|
+          filter_clauses << {
+            match: {
+              type_line: {
+                query: card_type,
+                operator: "and"
+              }
+            }
+          }
+        end
+      end
+
+      # Format legality filter
+      if filters[:formats].present?
+        Array(filters[:formats]).each do |format|
+          filter_clauses << {
+            term: {
+              "legalities.#{format}": "legal"
+            }
+          }
+        end
+      end
+
+      # Keyword filter
+      if filters[:keywords].present?
+        Array(filters[:keywords]).each do |keyword|
+          filter_clauses << {term: {keywords: keyword}}
+        end
+      end
+
+      # Layout filter
+      if filters[:layout].present?
+        filter_clauses << {term: {layout: filters[:layout]}}
+      end
+
+      # Reserved list filter
+      if filters[:reserved].present?
+        filter_clauses << {term: {reserved: filters[:reserved] == "true"}}
+      end
+
+      filter_clauses
     end
   end
 end

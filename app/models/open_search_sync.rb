@@ -52,7 +52,7 @@ class OpenSearchSync < ApplicationRecord
 
   # Calculate progress percentage
   def progress_percentage
-    return 0 if total_cards.zero?
+    return 0 unless total_cards&.positive?
     ((indexed_cards.to_f / total_cards) * 100).round(2)
   end
 

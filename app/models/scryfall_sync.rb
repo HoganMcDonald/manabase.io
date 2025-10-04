@@ -177,8 +177,15 @@ class ScryfallSync < ApplicationRecord
   end
 
   def job_progress
-    return {total: 0, completed: 0, failed: 0, pending: 0} unless processing?
+    return {total: 0, completed: 0, failed: 0, pending: 0, percentage: 0} unless processing?
 
+    # Cache job progress for 30 seconds to avoid expensive JSON queries on every request
+    Rails.cache.fetch("scryfall_sync_#{id}_job_progress", expires_in: 30.seconds) do
+      calculate_job_progress
+    end
+  end
+
+  def calculate_job_progress
     all_jobs = processing_jobs
     total = all_jobs.count
     completed = associated_jobs.where.not(finished_at: nil).count

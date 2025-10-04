@@ -135,4 +135,81 @@ namespace :opensearch do
       exit 1
     end
   end
+
+  desc "Backfill embeddings for all cards"
+  task backfill_embeddings: :environment do
+    start_id = ENV["START_ID"]
+    limit = ENV["LIMIT"]&.to_i
+
+    puts "Starting embedding backfill..."
+    puts "Start ID: #{start_id || 'beginning'}"
+    puts "Limit: #{limit || 'all cards'}"
+    puts "=" * 50
+
+    result = EmbeddingBackfillJob.perform_now(start_id: start_id, limit: limit)
+
+    puts "\n" + "=" * 50
+    puts "Backfill complete!"
+    puts "  Processed: #{result[:processed]}"
+    puts "  Failed: #{result[:failed]}"
+    puts "  Total: #{result[:total]}"
+  rescue StandardError => e
+    puts "✗ Backfill failed: #{e.message}"
+    puts e.backtrace.first(5).join("\n")
+    exit 1
+  end
+
+  desc "Test embedding generation"
+  task test_embeddings: :environment do
+    puts "Testing embedding generation..."
+    puts "=" * 50
+
+    test_texts = [
+      "Lightning Bolt",
+      "cards that let you draw cards when creatures die",
+      "low cost sacrifice creatures"
+    ]
+
+    test_texts.each do |text|
+      puts "\nGenerating embedding for: \"#{text}\""
+
+      begin
+        embedding = Search::EmbeddingService.embed(text)
+
+        if embedding.present?
+          puts "✓ Successfully generated embedding"
+          puts "  Dimensions: #{embedding.length}"
+          puts "  First 5 values: #{embedding.take(5).map { |v| v.round(4) }.join(", ")}"
+        else
+          puts "✗ Failed to generate embedding (returned nil)"
+        end
+      rescue StandardError => e
+        puts "✗ Error generating embedding: #{e.message}"
+        puts e.backtrace.first(3).join("\n")
+      end
+    end
+
+    puts "\n" + "=" * 50
+    puts "Testing card embedding..."
+
+    begin
+      card = Card.first
+      if card
+        puts "Card: #{card.name}"
+        embedding = Search::EmbeddingService.embed_card(card)
+
+        if embedding.present?
+          puts "✓ Successfully generated card embedding"
+          puts "  Dimensions: #{embedding.length}"
+        else
+          puts "✗ Failed to generate card embedding"
+        end
+      else
+        puts "⚠ No cards found in database"
+      end
+    rescue StandardError => e
+      puts "✗ Error: #{e.message}"
+      puts e.backtrace.first(3).join("\n")
+    end
+  end
 end
