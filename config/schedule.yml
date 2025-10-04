@@ -1,0 +1,9 @@
+# Sidekiq-Cron schedule configuration
+# See https://github.com/sidekiq-cron/sidekiq-cron
+
+production:
+  clear_sidekiq_finished_jobs:
+    cron: "12 * * * *"  # Every hour at minute 12
+    class: "ClearSidekiqJobsJob"
+    queue: default
+    description: "Clear finished jobs from Sidekiq stats"

@@ -1,0 +1,23 @@
+---
+# Sidekiq configuration
+# See https://github.com/sidekiq/sidekiq/wiki/Advanced-Options
+
+:concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+:max_retries: 5
+
+# Queue priorities (higher weight = higher priority)
+:queues:
+  - [default, 5]
+  - [low, 1]
+
+# Production configuration
+production:
+  :concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 10) %>
+
+# Development configuration
+development:
+  :concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 3) %>
+
+# Test configuration
+test:
+  :concurrency: 1
