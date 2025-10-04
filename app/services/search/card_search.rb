@@ -157,6 +157,27 @@ module Search
         filter_clauses << {term: {reserved: filters[:reserved] == "true"}}
       end
 
+      # Rarity filter
+      if filters[:rarities].present?
+        filter_clauses << {terms: {rarity: Array(filters[:rarities])}}
+      end
+
+      # Power filter
+      if filters[:power_min].present? || filters[:power_max].present?
+        power_filter = {range: {power: {}}}
+        power_filter[:range][:power][:gte] = filters[:power_min].to_i if filters[:power_min].present?
+        power_filter[:range][:power][:lte] = filters[:power_max].to_i if filters[:power_max].present?
+        filter_clauses << power_filter
+      end
+
+      # Toughness filter
+      if filters[:toughness_min].present? || filters[:toughness_max].present?
+        toughness_filter = {range: {toughness: {}}}
+        toughness_filter[:range][:toughness][:gte] = filters[:toughness_min].to_i if filters[:toughness_min].present?
+        toughness_filter[:range][:toughness][:lte] = filters[:toughness_max].to_i if filters[:toughness_max].present?
+        filter_clauses << toughness_filter
+      end
+
       # Build the final query
       {
         query: {
@@ -420,6 +441,27 @@ module Search
       # Reserved list filter
       if filters[:reserved].present?
         filter_clauses << {term: {reserved: filters[:reserved] == "true"}}
+      end
+
+      # Rarity filter
+      if filters[:rarities].present?
+        filter_clauses << {terms: {rarity: Array(filters[:rarities])}}
+      end
+
+      # Power filter
+      if filters[:power_min].present? || filters[:power_max].present?
+        power_filter = {range: {power: {}}}
+        power_filter[:range][:power][:gte] = filters[:power_min].to_i if filters[:power_min].present?
+        power_filter[:range][:power][:lte] = filters[:power_max].to_i if filters[:power_max].present?
+        filter_clauses << power_filter
+      end
+
+      # Toughness filter
+      if filters[:toughness_min].present? || filters[:toughness_max].present?
+        toughness_filter = {range: {toughness: {}}}
+        toughness_filter[:range][:toughness][:gte] = filters[:toughness_min].to_i if filters[:toughness_min].present?
+        toughness_filter[:range][:toughness][:lte] = filters[:toughness_max].to_i if filters[:toughness_max].present?
+        filter_clauses << toughness_filter
       end
 
       filter_clauses

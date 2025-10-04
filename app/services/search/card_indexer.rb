@@ -273,6 +273,9 @@ module Search
       # Put nonfoil first if available so it's the default finish
       finishes = finishes.sort_by { |f| f == "nonfoil" ? 0 : 1 }
 
+      # Get rarity from first printing (prioritize the same printing we use for images)
+      rarity = printing&.rarity
+
       doc = {
         name: card.name,
         oracle_text: card.oracle_text,
@@ -283,6 +286,7 @@ module Search
         color_identity: card.color_identity || [],
         keywords: card.keywords || [],
         layout: card.layout,
+        rarity: rarity,
         power: card.power,
         toughness: card.toughness,
         loyalty: card.loyalty,

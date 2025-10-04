@@ -2,7 +2,43 @@
 
 module Api
   class CardsController < ApplicationController
-    skip_before_action :authenticate, only: [:autocomplete, :search]
+    skip_before_action :authenticate, only: [:autocomplete, :search, :keywords, :types]
+
+    def types
+      # Get all unique card types from type_line, split by spaces and dashes
+      # This extracts individual types like "Creature", "Legendary", "Goblin", etc.
+      types = Card.connection.select_values(
+        <<-SQL
+          SELECT DISTINCT unnest(
+            string_to_array(
+              regexp_replace(type_line, '[—–-]', ' ', 'g'),
+              ' '
+            )
+          ) as card_type
+          FROM cards
+          WHERE type_line IS NOT NULL
+          ORDER BY card_type
+        SQL
+      ).reject(&:blank?)
+
+      render json: types
+    rescue StandardError => e
+      Rails.logger.error("Types fetch error: #{e.message}")
+      render json: {error: "Failed to fetch types"}, status: :internal_server_error
+    end
+
+    def keywords
+      # Get all unique keywords from cards, sorted alphabetically
+      # keywords is stored as JSONB, so we use jsonb_array_elements_text
+      keywords = Card.connection.select_values(
+        "SELECT DISTINCT jsonb_array_elements_text(keywords) as keyword FROM cards WHERE keywords IS NOT NULL AND jsonb_array_length(keywords) > 0 ORDER BY keyword"
+      )
+
+      render json: keywords
+    rescue StandardError => e
+      Rails.logger.error("Keywords fetch error: #{e.message}")
+      render json: {error: "Failed to fetch keywords"}, status: :internal_server_error
+    end
 
     def autocomplete
       query = params[:q]
@@ -80,6 +116,15 @@ module Api
 
       # Reserved list filter
       filters[:reserved] = params[:reserved] if params[:reserved].present?
+
+      # Rarity filter
+      filters[:rarities] = Array(params[:rarities]) if params[:rarities].present?
+
+      # Power/Toughness filters
+      filters[:power_min] = params[:power_min] if params[:power_min].present?
+      filters[:power_max] = params[:power_max] if params[:power_max].present?
+      filters[:toughness_min] = params[:toughness_min] if params[:toughness_min].present?
+      filters[:toughness_max] = params[:toughness_max] if params[:toughness_max].present?
 
       # Sort order
       filters[:sort] = params[:sort] if params[:sort].present?
