@@ -177,30 +177,31 @@ class ScryfallSync < ApplicationRecord
   end
 
   def job_progress
-    return {total: 0, completed: 0, failed: 0, pending: 0, percentage: 0} unless processing?
+    # With Sidekiq, we don't have per-sync job tracking like Solid Queue
+    # Instead, we track progress via processed_records/total_records
+    # Return estimated job progress based on batch processing
+    return {total: 0, completed: 0, failed: 0, pending: 0, percentage: 0} unless processing? || processing_completed?
 
-    # Cache job progress for 30 seconds to avoid expensive JSON queries on every request
-    Rails.cache.fetch("scryfall_sync_#{id}_job_progress", expires_in: 30.seconds) do
-      calculate_job_progress
-    end
+    # Estimate jobs based on records and batch size (default 250 records per job)
+    batch_size = self.batch_size || 250
+    total_jobs = total_records ? (total_records.to_f / batch_size).ceil : 0
+    completed_jobs = processed_records ? (processed_records.to_f / batch_size).floor : 0
+    failed_jobs = failed_batches || 0
+    pending_jobs = [total_jobs - completed_jobs - failed_jobs, 0].max
+
+    {
+      total: total_jobs,
+      completed: completed_jobs,
+      failed: failed_jobs,
+      pending: pending_jobs,
+      percentage: total_jobs > 0 ? ((completed_jobs.to_f / total_jobs) * 100).round(2) : 0
+    }
   end
 
   def calculate_job_progress
-    all_jobs = processing_jobs
-    total = all_jobs.count
-    completed = associated_jobs.where.not(finished_at: nil).count
-    failed = SolidQueue::FailedExecution.where(
-      job_id: associated_jobs.pluck(:id)
-    ).count
-    pending = total - completed
-
-    {
-      total: total,
-      completed: completed,
-      failed: failed,
-      pending: pending,
-      percentage: total > 0 ? ((completed.to_f / total) * 100).round(2) : 0
-    }
+    # This method is no longer used with Sidekiq
+    # Job progress is calculated directly in job_progress method above
+    job_progress
   end
 
   def estimated_completion_time
@@ -250,30 +251,34 @@ class ScryfallSync < ApplicationRecord
   end
 
   def associated_jobs
-    SolidQueue::Job
-      .where("(arguments::json->'arguments'->0)::text = ?", id.to_s)
+    # Sidekiq doesn't provide direct job querying like Solid Queue
+    # Jobs are tracked via the processing_status and processed_records fields
+    # Return an empty array as this method is no longer needed with Sidekiq
+    []
   end
 
   def active_jobs
-    associated_jobs.where(finished_at: nil)
+    # Sidekiq workers can be inspected via Sidekiq::Workers
+    # but we'll rely on the processing_status field instead
+    []
   end
 
   def processing_jobs
-    SolidQueue::Job
-      .where("class_name IN (?) AND (arguments::json->'arguments'->0)::text = ?",
-             ["ScryfallProcessingJob", "ScryfallBatchImportJob"], id.to_s)
-      .where(finished_at: nil)
+    # With Sidekiq, job progress is tracked via the sync record itself
+    # rather than querying the job queue
+    []
   end
 
   private
 
   def destroy_associated_jobs
-    job_count = active_jobs.count
-    active_jobs.destroy_all
-    Rails.logger.info "Cancelled #{job_count} associated jobs for sync #{id}"
+    # With Sidekiq, we cannot directly cancel jobs from the queue
+    # We'll mark the sync as cancelled and jobs should check the status
+    # before processing
+    Rails.logger.info "Marking sync #{id} as cancelled (Sidekiq jobs will check status)"
     true
   rescue StandardError => e
-    Rails.logger.error "Failed to destroy jobs for sync #{id}: #{e.message}"
+    Rails.logger.error "Failed to cancel sync #{id}: #{e.message}"
     false
   end
 end

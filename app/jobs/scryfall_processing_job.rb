@@ -109,10 +109,8 @@ class ScryfallProcessingJob < ApplicationJob
     # For large datasets, throttle job creation to avoid overwhelming the queue
     if @sync.sync_type == "all_cards" && batch_number % 10 == 0
       # Check queue depth and wait if too many jobs are pending
-      pending_count = SolidQueue::Job.where(
-        class_name: "ScryfallBatchImportJob",
-        finished_at: nil
-      ).count
+      queue = Sidekiq::Queue.new("low")
+      pending_count = queue.size
 
       if pending_count > 50
         Rails.logger.info "Throttling: #{pending_count} jobs pending, waiting..."

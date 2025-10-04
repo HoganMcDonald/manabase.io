@@ -117,7 +117,7 @@ class Admin::ScryfallSyncsController < InertiaController
       error_message: sync.error_message,
       job_progress: sync.job_progress,
       failure_logs: sync.failure_logs || [],
-      active_jobs_count: sync.active_jobs.count,
+      active_jobs_count: 0, # With Sidekiq, we track progress via processed_records instead
       processing_started_at: sync.processing_started_at&.iso8601,
       processing_completed_at: sync.processing_completed_at&.iso8601,
       estimated_completion_time: sync.estimated_completion_time
