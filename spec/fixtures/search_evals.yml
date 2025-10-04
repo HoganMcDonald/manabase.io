@@ -1,0 +1,156 @@
+# Golden dataset for search quality evaluation
+# Each entry contains:
+#   - query: The search query
+#   - description: What this test case validates
+#   - expected_results: Card names that should appear in top results
+#   - min_rank: The worst acceptable rank for the first relevant result (default: 5)
+#   - relevance_threshold: Minimum LLM judge score to pass (1-5, default: 3)
+
+# Exact card name matches
+- query: "Lightning Bolt"
+  description: "Exact card name should be top result"
+  expected_results:
+    - "Lightning Bolt"
+  min_rank: 1
+
+- query: "Black Lotus"
+  description: "Famous card with exact name"
+  expected_results:
+    - "Black Lotus"
+  min_rank: 1
+
+- query: "Counterspell"
+  description: "Classic counterspell should rank first"
+  expected_results:
+    - "Counterspell"
+  min_rank: 1
+
+# Partial name matches
+- query: "bolt"
+  description: "Partial name should find Lightning Bolt and other bolt cards"
+  expected_results:
+    - "Lightning Bolt"
+    - "Snapback"  # Not a bolt, but testing
+  min_rank: 3
+
+- query: "birds of paradise"
+  description: "Multi-word partial match"
+  expected_results:
+    - "Birds of Paradise"
+  min_rank: 1
+
+# Natural language semantic queries
+- query: "cards that draw cards when creatures die"
+  description: "Semantic search for death triggers that draw cards"
+  expected_results:
+    - "Midnight Reaper"
+    - "Grim Haruspex"
+    - "Dark Prophecy"
+    - "Fecundity"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "cards that let you sacrifice creatures for value"
+  description: "Semantic search for sacrifice outlets"
+  expected_results:
+    - "Viscera Seer"
+    - "Carrion Feeder"
+    - "Ashnod's Altar"
+    - "Phyrexian Altar"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "removal spells that exile"
+  description: "Semantic search for exile-based removal"
+  expected_results:
+    - "Swords to Plowshares"
+    - "Path to Exile"
+    - "Generous Gift"
+    - "Beast Within"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "mana dorks in green"
+  description: "MTG slang for mana-producing creatures"
+  expected_results:
+    - "Birds of Paradise"
+    - "Llanowar Elves"
+    - "Elvish Mystic"
+    - "Fyndhorn Elves"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "counterspells that cost one blue mana"
+  description: "Specific mechanical query with mana cost"
+  expected_results:
+    - "Spell Pierce"
+    - "Swan Song"
+    - "Stubborn Denial"
+  min_rank: 10
+  relevance_threshold: 3
+
+# Mechanical searches
+- query: "red instant burn spell"
+  description: "Search by color, type, and effect"
+  expected_results:
+    - "Lightning Bolt"
+    - "Shock"
+    - "Lava Spike"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "creatures with flying and lifelink"
+  description: "Multiple keyword search"
+  expected_results:
+    - "Vampire Nighthawk"
+    - "Baneslayer Angel"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "planeswalkers that ultimate immediately"
+  description: "Specific mechanical interaction"
+  expected_results:
+    - "Karn Liberated"
+    - "Ugin, the Spirit Dragon"
+  min_rank: 10
+  relevance_threshold: 3
+
+# Edge cases
+- query: "lightning blot"
+  description: "Common typo should still find Lightning Bolt"
+  expected_results:
+    - "Lightning Bolt"
+  min_rank: 3
+  relevance_threshold: 3
+
+- query: "bob"
+  description: "MTG nickname for Dark Confidant"
+  expected_results:
+    - "Dark Confidant"
+  min_rank: 5
+  relevance_threshold: 2
+
+- query: "sad robot"
+  description: "MTG nickname for Solemn Simulacrum"
+  expected_results:
+    - "Solemn Simulacrum"
+  min_rank: 5
+  relevance_threshold: 2
+
+# Complex queries
+- query: "cards that prevent damage"
+  description: "Broad effect-based search"
+  expected_results:
+    - "Teferi's Protection"
+    - "Gideon's Sacrifice"
+  min_rank: 10
+  relevance_threshold: 3
+
+- query: "tutors that put cards on top of library"
+  description: "Specific tutor type"
+  expected_results:
+    - "Mystical Tutor"
+    - "Enlightened Tutor"
+    - "Worldly Tutor"
+  min_rank: 10
+  relevance_threshold: 3
