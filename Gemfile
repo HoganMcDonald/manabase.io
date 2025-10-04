@@ -21,7 +21,7 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
-gem "solid_queue"
+gem "solid_queue", github: "rails/solid_queue", branch: "main"
 gem "solid_cable"
 
 # Reduces boot times through caching; required in config/boot.rb
@@ -60,6 +60,9 @@ gem "aasm"
 
 # OpenSearch Ruby client
 gem "opensearch-ruby"
+
+# Ruby LLM client for embeddings
+gem "ruby_llm"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
