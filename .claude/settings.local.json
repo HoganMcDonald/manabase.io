@@ -36,7 +36,8 @@
       "Bash(curl -s \"http://localhost:3000/api/cards/search?types%5B%5D=Goblin\")",
       "Bash(curl -s \"http://localhost:3000/api/cards/search?formats%5B%5D=commander&rarities%5B%5D=mythic\")",
       "Bash(curl -s \"http://localhost:3000/api/cards/search?q=lightning\")",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
