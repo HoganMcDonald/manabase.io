@@ -1,8 +1,20 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
-  # Mount Mission Control Jobs for monitoring background jobs
-  mount MissionControl::Jobs::Engine, at: "/jobs"
+  # Mount Sidekiq Web UI for monitoring background jobs (admin only)
+  require "sidekiq/web"
+  require "sidekiq/cron/web"
+
+  # Protect Sidekiq Web UI with admin authentication
+  class AdminConstraint
+    def matches?(request)
+      return false unless (session_token = request.cookie_jar.signed[:session_token])
+      session = Session.find_by(id: session_token)
+      session&.user&.admin?
+    end
+  end
+
+  mount Sidekiq::Web, at: "/jobs", constraints: AdminConstraint.new
 
   get  "sign_in", to: "sessions#new", as: :sign_in
   post "sign_in", to: "sessions#create"
