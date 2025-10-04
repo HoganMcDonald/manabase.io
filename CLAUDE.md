@@ -7,11 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Development
 
 ```bash
-# Start the application (includes Vite, Rails server, and Docker services)
+# Start the application (includes Vite, Rails server, Sidekiq worker, and Docker services)
 bin/dev
 
-# Start background job worker (if needed for Solid Queue jobs)
-bin/jobs start
+# Start Sidekiq worker separately (if not using bin/dev)
+bundle exec sidekiq -C config/sidekiq.yml
 
 # Setup the application initially
 bin/setup
@@ -93,7 +93,7 @@ rake opensearch:delete         # Remove index
 
 ### Stack Overview
 
-- **Backend**: Rails 8 with PostgreSQL, Redis, and Solid Queue for background jobs
+- **Backend**: Rails 8 with PostgreSQL, Redis, and Sidekiq for background jobs
 - **Frontend**: React with TypeScript, Inertia.js for SSR, Vite for bundling
 - **UI Components**: Radix UI primitives with Tailwind CSS
 - **Testing**: RSpec for backend, comprehensive factory and fixture setup
@@ -102,10 +102,10 @@ rake opensearch:delete         # Remove index
 
 1. **Inertia.js Integration**: Pages are React components served via Rails controllers using `inertia` render method. Props are passed from controllers to React pages seamlessly.
 
-2. **Background Job Processing**: Uses Solid Queue with three job types:
+2. **Background Job Processing**: Uses Sidekiq with three job types:
    - `ScryfallSyncJob`: Downloads bulk data files
    - `ScryfallProcessingJob`: Orchestrates batch processing
-   - `ScryfallBatchImportJob`: Imports data in parallel batches
+   - `ScryfallBatchImportJob`: Imports data in parallel batches (on low priority queue)
 
 3. **State Machine Pattern**: `ScryfallSync` model uses AASM for state transitions (pending → downloading → completed/failed)
 
@@ -143,13 +143,20 @@ Uses authentication-zero with bcrypt for user authentication, including:
 
 ### Background Job Monitoring
 
-Mission Control Jobs mounted at `/jobs` for monitoring Solid Queue jobs, providing visibility into job processing, failures, and performance.
+Sidekiq Web UI mounted at `/jobs` (requires admin authentication) for monitoring background jobs, providing visibility into:
+- Queue sizes and latency
+- Job processing statistics
+- Failed jobs and retries
+- Scheduled and recurring jobs (via Sidekiq-Cron)
 
 ## Database
 
 Uses PostgreSQL with Docker Compose for development. The database includes:
 - Solid Cache for Rails caching
-- Solid Queue for background job storage
 - Solid Cable for Action Cable support
 
-Docker services are automatically started with `bin/dev`.
+Uses Redis for:
+- Sidekiq job queue and processing
+- Application caching (optional)
+
+Docker services (PostgreSQL, Redis, OpenSearch) are automatically started with `bin/dev`.
