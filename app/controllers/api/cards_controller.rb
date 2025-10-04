@@ -24,14 +24,19 @@ module Api
       query = params[:q]
       page = params[:page]&.to_i || 1
       per_page = params[:per_page]&.to_i || 20
+      search_mode = params[:search_mode] || "auto"
 
       # Limit per_page to reasonable values
       per_page = [[per_page, 1].max, 100].min
 
+      # Validate search_mode
+      valid_modes = %w[auto keyword semantic hybrid]
+      search_mode = "auto" unless valid_modes.include?(search_mode)
+
       filters = build_filters
 
       search_service = Search::CardSearch.new
-      results = search_service.search(query, filters: filters, page: page, per_page: per_page)
+      results = search_service.search(query, filters: filters, page: page, per_page: per_page, search_mode: search_mode)
 
       render json: results
     rescue StandardError => e

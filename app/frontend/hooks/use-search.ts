@@ -6,10 +6,14 @@ import type {
   SearchResponse,
 } from "@/lib/types/card"
 
+type SearchMode = "auto" | "keyword" | "semantic" | "hybrid"
+
 interface UseSearchOptions {
   debounceMs?: number
+  autocompleteEnabled?: boolean
   autocompleteTriggerLength?: number
   autocompleteLimit?: number
+  searchMode?: SearchMode
 }
 
 interface UseSearchReturn {
@@ -20,6 +24,7 @@ interface UseSearchReturn {
   isLoading: boolean
   showSuggestions: boolean
   totalResults: number
+  searchMode: SearchMode
 
   // Actions
   setQuery: (query: string) => void
@@ -32,8 +37,10 @@ interface UseSearchReturn {
 export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
   const {
     debounceMs = 300,
+    autocompleteEnabled = false,
     autocompleteTriggerLength = 2,
     autocompleteLimit = 10,
+    searchMode = "auto",
   } = options
 
   const [query, setQuery] = useState("")
@@ -53,7 +60,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
       clearTimeout(debounceTimeout.current)
     }
 
-    if (query.length < autocompleteTriggerLength) {
+    if (query.length < autocompleteTriggerLength || !autocompleteEnabled) {
       setSuggestions([])
       setShowSuggestions(false)
       return
@@ -97,7 +104,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
 
       try {
         const response = await fetch(
-          `/api/cards/search?q=${encodeURIComponent(finalQuery)}`
+          `/api/cards/search?q=${encodeURIComponent(finalQuery)}&search_mode=${searchMode}`
         )
         const data = (await response.json()) as SearchResponse
         setSearchResults(data.results)
@@ -110,7 +117,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
         setIsLoading(false)
       }
     },
-    [query]
+    [query, searchMode]
   )
 
   // Handle suggestion click
@@ -140,6 +147,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     isLoading,
     showSuggestions,
     totalResults,
+    searchMode,
 
     // Actions
     setQuery,

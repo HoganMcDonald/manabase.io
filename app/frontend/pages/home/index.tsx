@@ -18,6 +18,14 @@ const breadcrumbs = [
 ]
 
 function SearchContent() {
+  // Get search_mode from URL query params, default to "auto"
+  const urlParams = new URLSearchParams(window.location.search)
+  const searchModeParam = urlParams.get("search_mode")
+  const validModes = ["auto", "keyword", "semantic", "hybrid"]
+  const searchMode = validModes.includes(searchModeParam ?? "")
+    ? (searchModeParam as "auto" | "keyword" | "semantic" | "hybrid")
+    : "auto"
+
   const {
     query,
     setQuery,
@@ -25,7 +33,7 @@ function SearchContent() {
     isLoading,
     totalResults,
     handleSearch,
-  } = useSearch()
+  } = useSearch({ searchMode })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

@@ -107,17 +107,37 @@ export function transformSearchCardToCard(
 ): Card {
   const actualFinish: CardFinish =
     finish ??
-    (searchCard.finishes?.includes("foil")
-      ? "foil"
+    (searchCard.finishes?.includes("nonfoil")
+      ? "nonfoil"
       : searchCard.finishes?.includes("etched")
         ? "etched"
-        : "nonfoil")
+        : "foil")
 
   // Handle multi-faced cards
   if (searchCard.card_faces && searchCard.card_faces.length > 0) {
     const frontFace = searchCard.card_faces[0]
     const backFace =
       searchCard.card_faces.length > 1 ? searchCard.card_faces[1] : undefined
+
+    // For split/flip/battle layouts, faces share a single image (top-level image_uris)
+    // For transform/modal_dfc layouts, each face has its own image
+    const usesSharedImage = ["split", "flip", "battle"].includes(
+      searchCard.layout,
+    )
+    const frontImageUris =
+      frontFace.image_uris &&
+      Object.keys(frontFace.image_uris).length > 0
+        ? frontFace.image_uris
+        : usesSharedImage
+          ? searchCard.image_uris ?? {}
+          : {}
+    const backImageUris =
+      backFace?.image_uris &&
+      Object.keys(backFace.image_uris).length > 0
+        ? backFace.image_uris
+        : usesSharedImage
+          ? searchCard.image_uris ?? {}
+          : {}
 
     return {
       id: searchCard.id,
@@ -133,7 +153,7 @@ export function transformSearchCardToCard(
         toughness: frontFace.toughness,
         loyalty: frontFace.loyalty,
         colors: frontFace.colors,
-        imageUris: frontFace.image_uris ?? {},
+        imageUris: frontImageUris,
       },
       backFace: backFace
         ? {
@@ -145,7 +165,7 @@ export function transformSearchCardToCard(
             toughness: backFace.toughness,
             loyalty: backFace.loyalty,
             colors: backFace.colors,
-            imageUris: backFace.image_uris ?? {},
+            imageUris: backImageUris,
           }
         : undefined,
     }
