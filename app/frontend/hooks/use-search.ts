@@ -7,6 +7,22 @@ import type {
 } from "@/lib/types/card"
 
 type SearchMode = "auto" | "keyword" | "semantic" | "hybrid"
+type ColorMatchMode = "exact" | "includes"
+
+export interface SearchFilters {
+  colors?: string[]
+  colorMatch?: ColorMatchMode
+  cmcMin?: number
+  cmcMax?: number
+  keywords?: string[]
+  types?: string[]
+  formats?: string[]
+  rarities?: string[]
+  powerMin?: number
+  powerMax?: number
+  toughnessMin?: number
+  toughnessMax?: number
+}
 
 interface UseSearchOptions {
   debounceMs?: number
@@ -25,6 +41,7 @@ interface UseSearchReturn {
   showSuggestions: boolean
   totalResults: number
   searchMode: SearchMode
+  filters: SearchFilters
 
   // Actions
   setQuery: (query: string) => void
@@ -32,6 +49,9 @@ interface UseSearchReturn {
   handleSuggestionClick: (cardName: string) => void
   setShowSuggestions: (show: boolean) => void
   clearSearch: () => void
+  updateFilters: (newFilters: Partial<SearchFilters>) => void
+  removeFilter: (filterKey: keyof SearchFilters) => void
+  clearFilters: () => void
 }
 
 export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
@@ -49,6 +69,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [totalResults, setTotalResults] = useState(0)
+  const [filters, setFilters] = useState<SearchFilters>({})
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
@@ -88,12 +109,81 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     }
   }, [query, autocompleteTriggerLength, autocompleteLimit, debounceMs])
 
+  // Build query params from filters
+  const buildFilterParams = useCallback((activeFilters: SearchFilters) => {
+    const params = new URLSearchParams()
+
+    if (activeFilters.colors && activeFilters.colors.length > 0) {
+      activeFilters.colors.forEach((color) => params.append("colors[]", color))
+      if (activeFilters.colorMatch) {
+        params.append("color_match", activeFilters.colorMatch)
+      }
+    }
+
+    if (activeFilters.cmcMin !== undefined) {
+      params.append("cmc_min", activeFilters.cmcMin.toString())
+    }
+
+    if (activeFilters.cmcMax !== undefined) {
+      params.append("cmc_max", activeFilters.cmcMax.toString())
+    }
+
+    if (activeFilters.keywords && activeFilters.keywords.length > 0) {
+      activeFilters.keywords.forEach((keyword) =>
+        params.append("keywords[]", keyword)
+      )
+    }
+
+    if (activeFilters.types && activeFilters.types.length > 0) {
+      activeFilters.types.forEach((type) => params.append("types[]", type))
+    }
+
+    if (activeFilters.formats && activeFilters.formats.length > 0) {
+      activeFilters.formats.forEach((format) =>
+        params.append("formats[]", format)
+      )
+    }
+
+    if (activeFilters.rarities && activeFilters.rarities.length > 0) {
+      activeFilters.rarities.forEach((rarity) =>
+        params.append("rarities[]", rarity)
+      )
+    }
+
+    if (activeFilters.powerMin !== undefined) {
+      params.append("power_min", activeFilters.powerMin.toString())
+    }
+
+    if (activeFilters.powerMax !== undefined) {
+      params.append("power_max", activeFilters.powerMax.toString())
+    }
+
+    if (activeFilters.toughnessMin !== undefined) {
+      params.append("toughness_min", activeFilters.toughnessMin.toString())
+    }
+
+    if (activeFilters.toughnessMax !== undefined) {
+      params.append("toughness_max", activeFilters.toughnessMax.toString())
+    }
+
+    return params
+  }, [])
+
   // Search function
   const handleSearch = useCallback(
     async (searchQuery?: string) => {
       const finalQuery = searchQuery ?? query
 
-      if (!finalQuery.trim()) {
+      // Check if we have either a query or active filters
+      const hasFilters = Object.keys(filters).some((key) => {
+        const value = filters[key as keyof SearchFilters]
+        if (Array.isArray(value)) {
+          return value.length > 0
+        }
+        return value !== undefined && value !== null
+      })
+
+      if (!finalQuery.trim() && !hasFilters) {
         setSearchResults([])
         setTotalResults(0)
         return
@@ -103,9 +193,13 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
       setShowSuggestions(false)
 
       try {
-        const response = await fetch(
-          `/api/cards/search?q=${encodeURIComponent(finalQuery)}&search_mode=${searchMode}`
-        )
+        const params = buildFilterParams(filters)
+        if (finalQuery.trim()) {
+          params.append("q", finalQuery)
+        }
+        params.append("search_mode", searchMode)
+
+        const response = await fetch(`/api/cards/search?${params.toString()}`)
         const data = (await response.json()) as SearchResponse
         setSearchResults(data.results)
         setTotalResults(data.total)
@@ -117,7 +211,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
         setIsLoading(false)
       }
     },
-    [query, searchMode]
+    [query, searchMode, filters, buildFilterParams]
   )
 
   // Handle suggestion click
@@ -139,6 +233,25 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     setShowSuggestions(false)
   }, [])
 
+  // Update filters
+  const updateFilters = useCallback((newFilters: Partial<SearchFilters>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }))
+  }, [])
+
+  // Remove a specific filter
+  const removeFilter = useCallback((filterKey: keyof SearchFilters) => {
+    setFilters((prev) => {
+      const updated = { ...prev }
+      delete updated[filterKey]
+      return updated
+    })
+  }, [])
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setFilters({})
+  }, [])
+
   return {
     // State
     query,
@@ -148,6 +261,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     showSuggestions,
     totalResults,
     searchMode,
+    filters,
 
     // Actions
     setQuery,
@@ -155,5 +269,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     handleSuggestionClick,
     setShowSuggestions,
     clearSearch,
+    updateFilters,
+    removeFilter,
+    clearFilters,
   }
 }

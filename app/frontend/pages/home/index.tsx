@@ -2,6 +2,8 @@ import { Head, Link, usePage } from "@inertiajs/react"
 import { Search } from "lucide-react"
 
 import { CardGrid } from "@/components/card/grid"
+import { FilterPills } from "@/components/filter-pills"
+import { SearchFiltersComponent } from "@/components/search-filters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useSearch } from "@/hooks/use-search"
@@ -33,6 +35,10 @@ function SearchContent() {
     isLoading,
     totalResults,
     handleSearch,
+    filters,
+    updateFilters,
+    removeFilter,
+    clearFilters,
   } = useSearch({ searchMode })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -61,7 +67,7 @@ function SearchContent() {
         </div>
 
         {/* Search Input */}
-        <div className="relative w-full max-w-2xl">
+        <div className="w-full max-w-2xl space-y-3">
           <form onSubmit={handleSubmit}>
             <div className="relative">
               <Search className="text-muted-foreground absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
@@ -75,6 +81,20 @@ function SearchContent() {
               />
             </div>
           </form>
+
+          {/* Filter Pills */}
+          <FilterPills
+            filters={filters}
+            onRemoveFilter={removeFilter}
+            onClearAll={clearFilters}
+          />
+
+          {/* Advanced Filters */}
+          <SearchFiltersComponent
+            filters={filters}
+            onFiltersChange={updateFilters}
+            onSearch={() => void handleSearch()}
+          />
         </div>
 
         {/* Search Results */}
