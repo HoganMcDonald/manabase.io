@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_01_200354) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_04_011342) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -197,6 +197,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_200354) do
     t.uuid "variation_of", comment: "ID of the card this is a variation of"
     t.jsonb "purchase_uris", default: {}, comment: "Purchase links (aggregated from printings)"
     t.jsonb "related_uris", default: {}, comment: "Related URIs (aggregated)"
+    t.datetime "embeddings_generated_at"
     t.index ["card_back_id"], name: "index_cards_on_card_back_id"
     t.index ["cmc"], name: "index_cards_on_cmc"
     t.index ["color_identity"], name: "index_cards_on_color_identity", using: :gin
@@ -209,6 +210,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_200354) do
     t.index ["scryfall_id"], name: "index_cards_on_scryfall_id", unique: true
     t.index ["type_line"], name: "index_cards_on_type_line"
     t.index ["variation_of"], name: "index_cards_on_variation_of"
+  end
+
+  create_table "embedding_runs", force: :cascade do |t|
+    t.string "status"
+    t.integer "total_cards"
+    t.integer "processed_cards"
+    t.integer "failed_cards"
+    t.integer "batch_size"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "open_search_syncs", force: :cascade do |t|
@@ -275,6 +289,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_200354) do
     t.index ["warning_count"], name: "index_scryfall_syncs_on_warning_count"
   end
 
+  create_table "search_evals", force: :cascade do |t|
+    t.string "status"
+    t.string "eval_type"
+    t.integer "total_queries"
+    t.integer "completed_queries"
+    t.integer "failed_queries"
+    t.decimal "avg_precision"
+    t.decimal "avg_recall"
+    t.decimal "avg_mrr"
+    t.decimal "avg_ndcg"
+    t.boolean "use_llm_judge"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.jsonb "results"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "user_agent"
@@ -323,6 +356,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_200354) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
+    t.index ["class_name", "finished_at"], name: "index_solid_queue_jobs_on_class_name_and_finished_at"
     t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
     t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
     t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
