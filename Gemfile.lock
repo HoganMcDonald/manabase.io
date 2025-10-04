@@ -1,16 +1,3 @@
-GIT
-  remote: https://github.com/rails/solid_queue.git
-  revision: 1957f570ad4bce146516435ba1dfe5d270b8363e
-  branch: main
-  specs:
-    solid_queue (1.2.1)
-      activejob (>= 7.1)
-      activerecord (>= 7.1)
-      concurrent-ruby (>= 1.3.1)
-      fugit (~> 1.11.0)
-      railties (>= 7.1)
-      thor (>= 1.3.1)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -181,10 +168,6 @@ GEM
     hashdiff (1.2.1)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
-    importmap-rails (2.2.2)
-      actionpack (>= 6.0.0)
-      activesupport (>= 6.0.0)
-      railties (>= 6.0.0)
     inertia_rails (3.11.0)
       railties (>= 6)
     io-console (0.8.1)
@@ -232,16 +215,6 @@ GEM
     mini_mime (1.1.5)
     mini_portile2 (2.8.9)
     minitest (5.25.5)
-    mission_control-jobs (1.1.0)
-      actioncable (>= 7.1)
-      actionpack (>= 7.1)
-      activejob (>= 7.1)
-      activerecord (>= 7.1)
-      importmap-rails (>= 1.2.1)
-      irb (~> 1.13)
-      railties (>= 7.1)
-      stimulus-rails
-      turbo-rails
     msgpack (1.8.0)
     multi_json (1.17.0)
     multipart-post (2.4.1)
@@ -349,6 +322,8 @@ GEM
     rdoc (6.14.2)
       erb
       psych (>= 4.0.0)
+    redis-client (0.26.1)
+      connection_pool
     regexp_parser (2.11.3)
     reline (0.6.2)
       io-console (~> 0.5)
@@ -422,6 +397,16 @@ GEM
       websocket (~> 1.0)
     shoulda-matchers (6.5.0)
       activesupport (>= 5.2.0)
+    sidekiq (7.3.9)
+      base64
+      connection_pool (>= 2.3.0)
+      logger
+      rack (>= 2.2.4)
+      redis-client (>= 0.22.2)
+    sidekiq-cron (1.12.0)
+      fugit (~> 1.8)
+      globalid (>= 1.0.1)
+      sidekiq (>= 6)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -445,8 +430,6 @@ GEM
       net-sftp (>= 2.1.2)
       net-ssh (>= 2.8.0)
       ostruct
-    stimulus-rails (1.3.4)
-      railties (>= 6.0.0)
     stringio (3.1.7)
     thor (1.4.0)
     thruster (0.1.15)
@@ -455,9 +438,6 @@ GEM
     thruster (0.1.15-x86_64-linux)
     timecop (0.9.10)
     timeout (0.4.3)
-    turbo-rails (2.0.17)
-      actionpack (>= 7.1.0)
-      railties (>= 7.1.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.2.0)
@@ -525,7 +505,6 @@ DEPENDENCIES
   js-routes
   kamal
   letter_opener
-  mission_control-jobs
   opensearch-ruby
   pg (~> 1.5.9)
   propshaft
@@ -537,10 +516,11 @@ DEPENDENCIES
   ruby_llm
   selenium-webdriver
   shoulda-matchers
+  sidekiq (~> 7.0)
+  sidekiq-cron (~> 1.12)
   simplecov
   solid_cable
   solid_cache
-  solid_queue!
   thruster
   timecop
   tzinfo-data

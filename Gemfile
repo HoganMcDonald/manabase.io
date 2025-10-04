@@ -19,10 +19,13 @@ gem "bcrypt", "~> 3.1.7"
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
-# Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
+# Use the database-backed adapters for Rails.cache and Action Cable
 gem "solid_cache"
-gem "solid_queue", github: "rails/solid_queue", branch: "main"
 gem "solid_cable"
+
+# Use Sidekiq for background job processing
+gem "sidekiq", "~> 7.0"
+gem "sidekiq-cron", "~> 1.12"
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
@@ -52,8 +55,8 @@ gem "js-routes"
 # ActiveResource for REST APIs
 gem "activeresource", "~> 6.1"
 
-# Mission Control Jobs for monitoring Solid Queue
-gem "mission_control-jobs"
+# Sidekiq Web UI for monitoring background jobs
+# (mounted in routes.rb)
 
 # State machine for ActiveRecord
 gem "aasm"
