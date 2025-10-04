@@ -36,9 +36,6 @@ production:
   cache:
     <<: *default
     database: <%= ENV.fetch("CACHE_DATABASE_NAME", "manabase_production_cache") %>
-  queue:
-    <<: *default
-    database: <%= ENV.fetch("QUEUE_DATABASE_NAME", "manabase_production_queue") %>
   cable:
     <<: *default
     database: <%= ENV.fetch("CABLE_DATABASE_NAME", "manabase_production_cable") %>
