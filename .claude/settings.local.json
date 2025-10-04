@@ -29,7 +29,14 @@
       "Bash(RAILS_ENV=test bin/rails console)",
       "Bash(RAILS_ENV=test bin/rails runner -)",
       "Bash(npm run lint:*)",
-      "Bash(rake:*)"
+      "Bash(rake:*)",
+      "Bash(git stash push:*)",
+      "Bash(git stash:*)",
+      "Bash(psql:*)",
+      "Bash(curl -s \"http://localhost:3000/api/cards/search?types%5B%5D=Goblin\")",
+      "Bash(curl -s \"http://localhost:3000/api/cards/search?formats%5B%5D=commander&rarities%5B%5D=mythic\")",
+      "Bash(curl -s \"http://localhost:3000/api/cards/search?q=lightning\")",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []
