@@ -22,6 +22,46 @@ export interface SearchFilters {
   powerMax?: number
   toughnessMin?: number
   toughnessMax?: number
+  loyaltyMin?: number
+  loyaltyMax?: number
+  edhrecRankMin?: number
+  edhrecRankMax?: number
+  pennyRankMin?: number
+  pennyRankMax?: number
+  releasedAfter?: string
+  releasedBefore?: string
+  games?: string[]
+  onArena?: boolean
+  onMtgo?: boolean
+  producedMana?: string[]
+  colorIndicator?: string[]
+  finishes?: string[]
+  artists?: string[]
+  sets?: string[]
+  frames?: string[]
+  borderColors?: string[]
+  frameEffects?: string[]
+  promoTypes?: string[]
+  oversized?: boolean
+  promo?: boolean
+  reprint?: boolean
+  variation?: boolean
+  digital?: boolean
+  booster?: boolean
+  storySpotlight?: boolean
+  contentWarning?: boolean
+  gameChanger?: boolean
+  colorless?: boolean
+  monoColor?: boolean
+  multicolor?: boolean
+  priceUsdMin?: number
+  priceUsdMax?: number
+  priceUsdFoilMin?: number
+  priceUsdFoilMax?: number
+  priceEurMin?: number
+  priceEurMax?: number
+  priceTixMin?: number
+  priceTixMax?: number
 }
 
 interface UseSearchOptions {
@@ -164,6 +204,180 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
 
     if (activeFilters.toughnessMax !== undefined) {
       params.append("toughness_max", activeFilters.toughnessMax.toString())
+    }
+
+    if (activeFilters.loyaltyMin !== undefined) {
+      params.append("loyalty_min", activeFilters.loyaltyMin.toString())
+    }
+
+    if (activeFilters.loyaltyMax !== undefined) {
+      params.append("loyalty_max", activeFilters.loyaltyMax.toString())
+    }
+
+    if (activeFilters.edhrecRankMin !== undefined) {
+      params.append("edhrec_rank_min", activeFilters.edhrecRankMin.toString())
+    }
+
+    if (activeFilters.edhrecRankMax !== undefined) {
+      params.append("edhrec_rank_max", activeFilters.edhrecRankMax.toString())
+    }
+
+    if (activeFilters.pennyRankMin !== undefined) {
+      params.append("penny_rank_min", activeFilters.pennyRankMin.toString())
+    }
+
+    if (activeFilters.pennyRankMax !== undefined) {
+      params.append("penny_rank_max", activeFilters.pennyRankMax.toString())
+    }
+
+    if (activeFilters.releasedAfter) {
+      params.append("released_after", activeFilters.releasedAfter)
+    }
+
+    if (activeFilters.releasedBefore) {
+      params.append("released_before", activeFilters.releasedBefore)
+    }
+
+    if (activeFilters.games && activeFilters.games.length > 0) {
+      activeFilters.games.forEach((game) => params.append("games[]", game))
+    }
+
+    if (activeFilters.onArena !== undefined) {
+      params.append("on_arena", activeFilters.onArena.toString())
+    }
+
+    if (activeFilters.onMtgo !== undefined) {
+      params.append("on_mtgo", activeFilters.onMtgo.toString())
+    }
+
+    if (activeFilters.producedMana && activeFilters.producedMana.length > 0) {
+      activeFilters.producedMana.forEach((mana) =>
+        params.append("produced_mana[]", mana)
+      )
+    }
+
+    if (activeFilters.colorIndicator && activeFilters.colorIndicator.length > 0) {
+      activeFilters.colorIndicator.forEach((color) =>
+        params.append("color_indicator[]", color)
+      )
+    }
+
+    if (activeFilters.finishes && activeFilters.finishes.length > 0) {
+      activeFilters.finishes.forEach((finish) =>
+        params.append("finishes[]", finish)
+      )
+    }
+
+    if (activeFilters.artists && activeFilters.artists.length > 0) {
+      activeFilters.artists.forEach((artist) =>
+        params.append("artists[]", artist)
+      )
+    }
+
+    if (activeFilters.sets && activeFilters.sets.length > 0) {
+      activeFilters.sets.forEach((set) => params.append("sets[]", set))
+    }
+
+    if (activeFilters.frames && activeFilters.frames.length > 0) {
+      activeFilters.frames.forEach((frame) => params.append("frames[]", frame))
+    }
+
+    if (activeFilters.borderColors && activeFilters.borderColors.length > 0) {
+      activeFilters.borderColors.forEach((color) =>
+        params.append("border_colors[]", color)
+      )
+    }
+
+    if (activeFilters.frameEffects && activeFilters.frameEffects.length > 0) {
+      activeFilters.frameEffects.forEach((effect) =>
+        params.append("frame_effects[]", effect)
+      )
+    }
+
+    if (activeFilters.promoTypes && activeFilters.promoTypes.length > 0) {
+      activeFilters.promoTypes.forEach((type) =>
+        params.append("promo_types[]", type)
+      )
+    }
+
+    if (activeFilters.oversized !== undefined) {
+      params.append("oversized", activeFilters.oversized.toString())
+    }
+
+    if (activeFilters.promo !== undefined) {
+      params.append("promo", activeFilters.promo.toString())
+    }
+
+    if (activeFilters.reprint !== undefined) {
+      params.append("reprint", activeFilters.reprint.toString())
+    }
+
+    if (activeFilters.variation !== undefined) {
+      params.append("variation", activeFilters.variation.toString())
+    }
+
+    if (activeFilters.digital !== undefined) {
+      params.append("digital", activeFilters.digital.toString())
+    }
+
+    if (activeFilters.booster !== undefined) {
+      params.append("booster", activeFilters.booster.toString())
+    }
+
+    if (activeFilters.storySpotlight !== undefined) {
+      params.append("story_spotlight", activeFilters.storySpotlight.toString())
+    }
+
+    if (activeFilters.contentWarning !== undefined) {
+      params.append("content_warning", activeFilters.contentWarning.toString())
+    }
+
+    if (activeFilters.gameChanger !== undefined) {
+      params.append("game_changer", activeFilters.gameChanger.toString())
+    }
+
+    if (activeFilters.colorless !== undefined) {
+      params.append("colorless", activeFilters.colorless.toString())
+    }
+
+    if (activeFilters.monoColor !== undefined) {
+      params.append("mono_color", activeFilters.monoColor.toString())
+    }
+
+    if (activeFilters.multicolor !== undefined) {
+      params.append("multicolor", activeFilters.multicolor.toString())
+    }
+
+    if (activeFilters.priceUsdMin !== undefined) {
+      params.append("price_usd_min", activeFilters.priceUsdMin.toString())
+    }
+
+    if (activeFilters.priceUsdMax !== undefined) {
+      params.append("price_usd_max", activeFilters.priceUsdMax.toString())
+    }
+
+    if (activeFilters.priceUsdFoilMin !== undefined) {
+      params.append("price_usd_foil_min", activeFilters.priceUsdFoilMin.toString())
+    }
+
+    if (activeFilters.priceUsdFoilMax !== undefined) {
+      params.append("price_usd_foil_max", activeFilters.priceUsdFoilMax.toString())
+    }
+
+    if (activeFilters.priceEurMin !== undefined) {
+      params.append("price_eur_min", activeFilters.priceEurMin.toString())
+    }
+
+    if (activeFilters.priceEurMax !== undefined) {
+      params.append("price_eur_max", activeFilters.priceEurMax.toString())
+    }
+
+    if (activeFilters.priceTixMin !== undefined) {
+      params.append("price_tix_min", activeFilters.priceTixMin.toString())
+    }
+
+    if (activeFilters.priceTixMax !== undefined) {
+      params.append("price_tix_max", activeFilters.priceTixMax.toString())
     }
 
     return params
