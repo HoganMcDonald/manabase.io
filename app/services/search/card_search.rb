@@ -178,6 +178,181 @@ module Search
         filter_clauses << toughness_filter
       end
 
+      # Loyalty filter
+      if filters[:loyalty_min].present? || filters[:loyalty_max].present?
+        loyalty_filter = {range: {loyalty: {}}}
+        loyalty_filter[:range][:loyalty][:gte] = filters[:loyalty_min] if filters[:loyalty_min].present?
+        loyalty_filter[:range][:loyalty][:lte] = filters[:loyalty_max] if filters[:loyalty_max].present?
+        filter_clauses << loyalty_filter
+      end
+
+      # EDHREC rank filter (lower is better/more popular)
+      if filters[:edhrec_rank_min].present? || filters[:edhrec_rank_max].present?
+        edhrec_filter = {range: {edhrec_rank: {}}}
+        edhrec_filter[:range][:edhrec_rank][:gte] = filters[:edhrec_rank_min].to_i if filters[:edhrec_rank_min].present?
+        edhrec_filter[:range][:edhrec_rank][:lte] = filters[:edhrec_rank_max].to_i if filters[:edhrec_rank_max].present?
+        filter_clauses << edhrec_filter
+      end
+
+      # Penny rank filter
+      if filters[:penny_rank_min].present? || filters[:penny_rank_max].present?
+        penny_filter = {range: {penny_rank: {}}}
+        penny_filter[:range][:penny_rank][:gte] = filters[:penny_rank_min].to_i if filters[:penny_rank_min].present?
+        penny_filter[:range][:penny_rank][:lte] = filters[:penny_rank_max].to_i if filters[:penny_rank_max].present?
+        filter_clauses << penny_filter
+      end
+
+      # Release date filter
+      if filters[:released_after].present? || filters[:released_before].present?
+        date_filter = {range: {released_at: {}}}
+        date_filter[:range][:released_at][:gte] = filters[:released_after] if filters[:released_after].present?
+        date_filter[:range][:released_at][:lte] = filters[:released_before] if filters[:released_before].present?
+        filter_clauses << date_filter
+      end
+
+      # Games/platforms filter
+      if filters[:games].present?
+        Array(filters[:games]).each do |game|
+          filter_clauses << {term: {games: game}}
+        end
+      end
+
+      # Produced mana filter
+      if filters[:produced_mana].present?
+        Array(filters[:produced_mana]).each do |mana|
+          filter_clauses << {term: {produced_mana: mana}}
+        end
+      end
+
+      # Finishes filter
+      if filters[:finishes].present?
+        Array(filters[:finishes]).each do |finish|
+          filter_clauses << {term: {finishes: finish}}
+        end
+      end
+
+      # Artist filter
+      if filters[:artists].present?
+        filter_clauses << {terms: {artists: Array(filters[:artists])}}
+      end
+
+      # Set filter
+      if filters[:sets].present?
+        filter_clauses << {terms: {sets: Array(filters[:sets])}}
+      end
+
+      # Frame filter
+      if filters[:frames].present?
+        filter_clauses << {terms: {frames: Array(filters[:frames])}}
+      end
+
+      # Border color filter
+      if filters[:border_colors].present?
+        filter_clauses << {terms: {border_colors: Array(filters[:border_colors])}}
+      end
+
+      # Frame effects filter
+      if filters[:frame_effects].present?
+        Array(filters[:frame_effects]).each do |effect|
+          filter_clauses << {term: {frame_effects: effect}}
+        end
+      end
+
+      # Promo types filter
+      if filters[:promo_types].present?
+        Array(filters[:promo_types]).each do |promo_type|
+          filter_clauses << {term: {promo_types: promo_type}}
+        end
+      end
+
+      # Color indicator filter
+      if filters[:color_indicator].present?
+        Array(filters[:color_indicator]).each do |color|
+          filter_clauses << {term: {color_indicator: color}}
+        end
+      end
+
+      # Boolean characteristic filters
+      filter_clauses << {term: {oversized: filters[:oversized] == "true"}} if filters[:oversized].present?
+      filter_clauses << {term: {promo: filters[:promo] == "true"}} if filters[:promo].present?
+      filter_clauses << {term: {reprint: filters[:reprint] == "true"}} if filters[:reprint].present?
+      filter_clauses << {term: {variation: filters[:variation] == "true"}} if filters[:variation].present?
+      filter_clauses << {term: {digital: filters[:digital] == "true"}} if filters[:digital].present?
+      filter_clauses << {term: {booster: filters[:booster] == "true"}} if filters[:booster].present?
+      filter_clauses << {term: {story_spotlight: filters[:story_spotlight] == "true"}} if filters[:story_spotlight].present?
+      filter_clauses << {term: {content_warning: filters[:content_warning] == "true"}} if filters[:content_warning].present?
+      filter_clauses << {term: {game_changer: filters[:game_changer] == "true"}} if filters[:game_changer].present?
+
+      # Derived filters for color identity
+      if filters[:colorless] == "true"
+        filter_clauses << {
+          bool: {
+            must_not: {exists: {field: "color_identity"}}
+          }
+        }
+      end
+
+      if filters[:mono_color] == "true"
+        filter_clauses << {
+          script: {
+            script: {
+              source: "doc['color_identity'].size() == 1"
+            }
+          }
+        }
+      end
+
+      if filters[:multicolor] == "true"
+        filter_clauses << {
+          script: {
+            script: {
+              source: "doc['color_identity'].size() > 1"
+            }
+          }
+        }
+      end
+
+      # Platform availability filters
+      if filters[:on_arena] == "true"
+        filter_clauses << {exists: {field: "arena_id"}}
+      end
+
+      if filters[:on_mtgo] == "true"
+        filter_clauses << {exists: {field: "mtgo_id"}}
+      end
+
+      # Price filters (USD)
+      if filters[:price_usd_min].present? || filters[:price_usd_max].present?
+        price_filter = {range: {price_usd: {}}}
+        price_filter[:range][:price_usd][:gte] = filters[:price_usd_min].to_f if filters[:price_usd_min].present?
+        price_filter[:range][:price_usd][:lte] = filters[:price_usd_max].to_f if filters[:price_usd_max].present?
+        filter_clauses << price_filter
+      end
+
+      # Price filters (USD Foil)
+      if filters[:price_usd_foil_min].present? || filters[:price_usd_foil_max].present?
+        price_filter = {range: {price_usd_foil: {}}}
+        price_filter[:range][:price_usd_foil][:gte] = filters[:price_usd_foil_min].to_f if filters[:price_usd_foil_min].present?
+        price_filter[:range][:price_usd_foil][:lte] = filters[:price_usd_foil_max].to_f if filters[:price_usd_foil_max].present?
+        filter_clauses << price_filter
+      end
+
+      # Price filters (EUR)
+      if filters[:price_eur_min].present? || filters[:price_eur_max].present?
+        price_filter = {range: {price_eur: {}}}
+        price_filter[:range][:price_eur][:gte] = filters[:price_eur_min].to_f if filters[:price_eur_min].present?
+        price_filter[:range][:price_eur][:lte] = filters[:price_eur_max].to_f if filters[:price_eur_max].present?
+        filter_clauses << price_filter
+      end
+
+      # Price filters (MTGO Tix)
+      if filters[:price_tix_min].present? || filters[:price_tix_max].present?
+        price_filter = {range: {price_tix: {}}}
+        price_filter[:range][:price_tix][:gte] = filters[:price_tix_min].to_f if filters[:price_tix_min].present?
+        price_filter[:range][:price_tix][:lte] = filters[:price_tix_max].to_f if filters[:price_tix_max].present?
+        filter_clauses << price_filter
+      end
+
       # Build the final query
       {
         query: {
@@ -462,6 +637,181 @@ module Search
         toughness_filter[:range][:toughness][:gte] = filters[:toughness_min].to_i if filters[:toughness_min].present?
         toughness_filter[:range][:toughness][:lte] = filters[:toughness_max].to_i if filters[:toughness_max].present?
         filter_clauses << toughness_filter
+      end
+
+      # Loyalty filter
+      if filters[:loyalty_min].present? || filters[:loyalty_max].present?
+        loyalty_filter = {range: {loyalty: {}}}
+        loyalty_filter[:range][:loyalty][:gte] = filters[:loyalty_min] if filters[:loyalty_min].present?
+        loyalty_filter[:range][:loyalty][:lte] = filters[:loyalty_max] if filters[:loyalty_max].present?
+        filter_clauses << loyalty_filter
+      end
+
+      # EDHREC rank filter
+      if filters[:edhrec_rank_min].present? || filters[:edhrec_rank_max].present?
+        edhrec_filter = {range: {edhrec_rank: {}}}
+        edhrec_filter[:range][:edhrec_rank][:gte] = filters[:edhrec_rank_min].to_i if filters[:edhrec_rank_min].present?
+        edhrec_filter[:range][:edhrec_rank][:lte] = filters[:edhrec_rank_max].to_i if filters[:edhrec_rank_max].present?
+        filter_clauses << edhrec_filter
+      end
+
+      # Penny rank filter
+      if filters[:penny_rank_min].present? || filters[:penny_rank_max].present?
+        penny_filter = {range: {penny_rank: {}}}
+        penny_filter[:range][:penny_rank][:gte] = filters[:penny_rank_min].to_i if filters[:penny_rank_min].present?
+        penny_filter[:range][:penny_rank][:lte] = filters[:penny_rank_max].to_i if filters[:penny_rank_max].present?
+        filter_clauses << penny_filter
+      end
+
+      # Release date filter
+      if filters[:released_after].present? || filters[:released_before].present?
+        date_filter = {range: {released_at: {}}}
+        date_filter[:range][:released_at][:gte] = filters[:released_after] if filters[:released_after].present?
+        date_filter[:range][:released_at][:lte] = filters[:released_before] if filters[:released_before].present?
+        filter_clauses << date_filter
+      end
+
+      # Games/platforms filter
+      if filters[:games].present?
+        Array(filters[:games]).each do |game|
+          filter_clauses << {term: {games: game}}
+        end
+      end
+
+      # Produced mana filter
+      if filters[:produced_mana].present?
+        Array(filters[:produced_mana]).each do |mana|
+          filter_clauses << {term: {produced_mana: mana}}
+        end
+      end
+
+      # Finishes filter
+      if filters[:finishes].present?
+        Array(filters[:finishes]).each do |finish|
+          filter_clauses << {term: {finishes: finish}}
+        end
+      end
+
+      # Artist filter
+      if filters[:artists].present?
+        filter_clauses << {terms: {artists: Array(filters[:artists])}}
+      end
+
+      # Set filter
+      if filters[:sets].present?
+        filter_clauses << {terms: {sets: Array(filters[:sets])}}
+      end
+
+      # Frame filter
+      if filters[:frames].present?
+        filter_clauses << {terms: {frames: Array(filters[:frames])}}
+      end
+
+      # Border color filter
+      if filters[:border_colors].present?
+        filter_clauses << {terms: {border_colors: Array(filters[:border_colors])}}
+      end
+
+      # Frame effects filter
+      if filters[:frame_effects].present?
+        Array(filters[:frame_effects]).each do |effect|
+          filter_clauses << {term: {frame_effects: effect}}
+        end
+      end
+
+      # Promo types filter
+      if filters[:promo_types].present?
+        Array(filters[:promo_types]).each do |promo_type|
+          filter_clauses << {term: {promo_types: promo_type}}
+        end
+      end
+
+      # Color indicator filter
+      if filters[:color_indicator].present?
+        Array(filters[:color_indicator]).each do |color|
+          filter_clauses << {term: {color_indicator: color}}
+        end
+      end
+
+      # Boolean characteristic filters
+      filter_clauses << {term: {oversized: filters[:oversized] == "true"}} if filters[:oversized].present?
+      filter_clauses << {term: {promo: filters[:promo] == "true"}} if filters[:promo].present?
+      filter_clauses << {term: {reprint: filters[:reprint] == "true"}} if filters[:reprint].present?
+      filter_clauses << {term: {variation: filters[:variation] == "true"}} if filters[:variation].present?
+      filter_clauses << {term: {digital: filters[:digital] == "true"}} if filters[:digital].present?
+      filter_clauses << {term: {booster: filters[:booster] == "true"}} if filters[:booster].present?
+      filter_clauses << {term: {story_spotlight: filters[:story_spotlight] == "true"}} if filters[:story_spotlight].present?
+      filter_clauses << {term: {content_warning: filters[:content_warning] == "true"}} if filters[:content_warning].present?
+      filter_clauses << {term: {game_changer: filters[:game_changer] == "true"}} if filters[:game_changer].present?
+
+      # Derived filters for color identity
+      if filters[:colorless] == "true"
+        filter_clauses << {
+          bool: {
+            must_not: {exists: {field: "color_identity"}}
+          }
+        }
+      end
+
+      if filters[:mono_color] == "true"
+        filter_clauses << {
+          script: {
+            script: {
+              source: "doc['color_identity'].size() == 1"
+            }
+          }
+        }
+      end
+
+      if filters[:multicolor] == "true"
+        filter_clauses << {
+          script: {
+            script: {
+              source: "doc['color_identity'].size() > 1"
+            }
+          }
+        }
+      end
+
+      # Platform availability filters
+      if filters[:on_arena] == "true"
+        filter_clauses << {exists: {field: "arena_id"}}
+      end
+
+      if filters[:on_mtgo] == "true"
+        filter_clauses << {exists: {field: "mtgo_id"}}
+      end
+
+      # Price filters (USD)
+      if filters[:price_usd_min].present? || filters[:price_usd_max].present?
+        price_filter = {range: {price_usd: {}}}
+        price_filter[:range][:price_usd][:gte] = filters[:price_usd_min].to_f if filters[:price_usd_min].present?
+        price_filter[:range][:price_usd][:lte] = filters[:price_usd_max].to_f if filters[:price_usd_max].present?
+        filter_clauses << price_filter
+      end
+
+      # Price filters (USD Foil)
+      if filters[:price_usd_foil_min].present? || filters[:price_usd_foil_max].present?
+        price_filter = {range: {price_usd_foil: {}}}
+        price_filter[:range][:price_usd_foil][:gte] = filters[:price_usd_foil_min].to_f if filters[:price_usd_foil_min].present?
+        price_filter[:range][:price_usd_foil][:lte] = filters[:price_usd_foil_max].to_f if filters[:price_usd_foil_max].present?
+        filter_clauses << price_filter
+      end
+
+      # Price filters (EUR)
+      if filters[:price_eur_min].present? || filters[:price_eur_max].present?
+        price_filter = {range: {price_eur: {}}}
+        price_filter[:range][:price_eur][:gte] = filters[:price_eur_min].to_f if filters[:price_eur_min].present?
+        price_filter[:range][:price_eur][:lte] = filters[:price_eur_max].to_f if filters[:price_eur_max].present?
+        filter_clauses << price_filter
+      end
+
+      # Price filters (MTGO Tix)
+      if filters[:price_tix_min].present? || filters[:price_tix_max].present?
+        price_filter = {range: {price_tix: {}}}
+        price_filter[:range][:price_tix][:gte] = filters[:price_tix_min].to_f if filters[:price_tix_min].present?
+        price_filter[:range][:price_tix][:lte] = filters[:price_tix_max].to_f if filters[:price_tix_max].present?
+        filter_clauses << price_filter
       end
 
       filter_clauses

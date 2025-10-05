@@ -218,6 +218,90 @@ module Search
             loyalty: {
               type: "keyword"
             },
+            # Platform availability
+            games: {
+              type: "keyword"
+            },
+            arena_id: {
+              type: "integer"
+            },
+            mtgo_id: {
+              type: "integer"
+            },
+            # Mana production
+            produced_mana: {
+              type: "keyword"
+            },
+            color_indicator: {
+              type: "keyword"
+            },
+            # Boolean characteristics
+            oversized: {
+              type: "boolean"
+            },
+            promo: {
+              type: "boolean"
+            },
+            reprint: {
+              type: "boolean"
+            },
+            variation: {
+              type: "boolean"
+            },
+            digital: {
+              type: "boolean"
+            },
+            booster: {
+              type: "boolean"
+            },
+            story_spotlight: {
+              type: "boolean"
+            },
+            content_warning: {
+              type: "boolean"
+            },
+            game_changer: {
+              type: "boolean"
+            },
+            # Popularity rankings
+            edhrec_rank: {
+              type: "integer"
+            },
+            penny_rank: {
+              type: "integer"
+            },
+            # Aggregated printing data
+            artists: {
+              type: "keyword"
+            },
+            sets: {
+              type: "keyword"
+            },
+            frames: {
+              type: "keyword"
+            },
+            border_colors: {
+              type: "keyword"
+            },
+            frame_effects: {
+              type: "keyword"
+            },
+            promo_types: {
+              type: "keyword"
+            },
+            # Price data (aggregated from printings)
+            price_usd: {
+              type: "float"
+            },
+            price_usd_foil: {
+              type: "float"
+            },
+            price_eur: {
+              type: "float"
+            },
+            price_tix: {
+              type: "float"
+            },
             # Semantic search vector field
             embedding: {
               type: "knn_vector",
@@ -276,6 +360,10 @@ module Search
       # Get rarity from first printing (prioritize the same printing we use for images)
       rarity = printing&.rarity
 
+      # Aggregate printing data
+      printing_data = aggregate_printing_data(card)
+      price_data = aggregate_price_data(card)
+
       doc = {
         name: card.name,
         oracle_text: card.oracle_text,
@@ -296,7 +384,39 @@ module Search
         card_faces: card.card_faces.map { |face| card_face_document(face) },
         legalities: card_legalities_document(card),
         released_at: card.released_at,
-        updated_at: card.updated_at
+        updated_at: card.updated_at,
+        # Platform availability
+        games: card.games || [],
+        arena_id: card.arena_id,
+        mtgo_id: card.mtgo_id,
+        # Mana production
+        produced_mana: card.produced_mana || [],
+        color_indicator: card.color_indicator || [],
+        # Boolean characteristics
+        oversized: card.oversized,
+        promo: card.promo,
+        reprint: card.reprint,
+        variation: card.variation,
+        digital: card.digital,
+        booster: card.booster,
+        story_spotlight: card.story_spotlight,
+        content_warning: card.content_warning,
+        game_changer: card.game_changer,
+        # Popularity rankings
+        edhrec_rank: card.edhrec_rank,
+        penny_rank: card.penny_rank,
+        # Aggregated printing data
+        artists: printing_data[:artists],
+        sets: printing_data[:sets],
+        frames: printing_data[:frames],
+        border_colors: printing_data[:border_colors],
+        frame_effects: printing_data[:frame_effects],
+        promo_types: printing_data[:promo_types],
+        # Price data
+        price_usd: price_data[:usd],
+        price_usd_foil: price_data[:usd_foil],
+        price_eur: price_data[:eur],
+        price_tix: price_data[:tix]
       }
 
       # Generate embedding for semantic search (optional, gracefully handle failures)
@@ -337,6 +457,36 @@ module Search
         legalities[legality.format] = legality.status
       end
       legalities
+    end
+
+    def aggregate_printing_data(card)
+      printings = card.card_printings
+
+      {
+        artists: printings.map(&:artist).compact.uniq,
+        sets: printings.map { |p| p.card_set.code }.compact.uniq,
+        frames: printings.map(&:frame).compact.uniq,
+        border_colors: printings.map(&:border_color).compact.uniq,
+        frame_effects: printings.flat_map { |p| p.frame_effects || [] }.uniq,
+        promo_types: printings.flat_map { |p| p.promo_types || [] }.uniq
+      }
+    end
+
+    def aggregate_price_data(card)
+      printings = card.card_printings
+
+      # Get lowest price for each price type across all printings
+      usd_prices = printings.filter_map { |p| p.prices&.dig("usd")&.to_f }.compact
+      usd_foil_prices = printings.filter_map { |p| p.prices&.dig("usd_foil")&.to_f }.compact
+      eur_prices = printings.filter_map { |p| p.prices&.dig("eur")&.to_f }.compact
+      tix_prices = printings.filter_map { |p| p.prices&.dig("tix")&.to_f }.compact
+
+      {
+        usd: usd_prices.min,
+        usd_foil: usd_foil_prices.min,
+        eur: eur_prices.min,
+        tix: tix_prices.min
+      }
     end
   end
 end
