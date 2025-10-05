@@ -210,6 +210,464 @@ export const FilterPills: FC<FilterPillsProps> = ({
         </Badge>
       )}
 
+      {/* Loyalty Min filter */}
+      {filters.loyaltyMin !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Loyalty ≥ {filters.loyaltyMin}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("loyaltyMin")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Loyalty Max filter */}
+      {filters.loyaltyMax !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Loyalty ≤ {filters.loyaltyMax}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("loyaltyMax")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Colorless filter */}
+      {filters.colorless && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Colorless</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("colorless")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Mono-color filter */}
+      {filters.monoColor && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Mono-colored</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("monoColor")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Multicolor filter */}
+      {filters.multicolor && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Multicolored</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("multicolor")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* On Arena filter */}
+      {filters.onArena && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">On Arena</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("onArena")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* On MTGO filter */}
+      {filters.onMtgo && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">On MTGO</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("onMtgo")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Promo filter */}
+      {filters.promo && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Promo</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("promo")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Reprint filter */}
+      {filters.reprint && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Reprint</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("reprint")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Digital filter */}
+      {filters.digital && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Digital</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("digital")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Oversized filter */}
+      {filters.oversized && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Oversized</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("oversized")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Story Spotlight filter */}
+      {filters.storySpotlight && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Story Spotlight</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("storySpotlight")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Game Changer filter */}
+      {filters.gameChanger && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Game Changer</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("gameChanger")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Finishes filter */}
+      {filters.finishes && filters.finishes.length > 0 && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Finishes: {filters.finishes.join(", ")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("finishes")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Produced Mana filter */}
+      {filters.producedMana && filters.producedMana.length > 0 && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="flex items-center gap-1">
+            <span className="text-xs">Produces:</span>
+            <Pips
+              pips={filters.producedMana.map((c) => `{${c}}`).join("")}
+              className="gap-0.5"
+            />
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("producedMana")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Border Colors filter */}
+      {filters.borderColors && filters.borderColors.length > 0 && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">
+            Border: {filters.borderColors.join(", ")}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("borderColors")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Released After filter */}
+      {filters.releasedAfter && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Released ≥ {filters.releasedAfter}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("releasedAfter")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Released Before filter */}
+      {filters.releasedBefore && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Released ≤ {filters.releasedBefore}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("releasedBefore")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* EDHREC Rank Min filter */}
+      {filters.edhrecRankMin !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">EDHREC ≥ {filters.edhrecRankMin}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("edhrecRankMin")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* EDHREC Rank Max filter */}
+      {filters.edhrecRankMax !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">EDHREC ≤ {filters.edhrecRankMax}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("edhrecRankMax")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Sets filter */}
+      {filters.sets && filters.sets.length > 0 && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Sets: {filters.sets.join(", ")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("sets")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Artists filter */}
+      {filters.artists && filters.artists.length > 0 && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">Artists: {filters.artists.join(", ")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("artists")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price USD Min filter */}
+      {filters.priceUsdMin !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">USD ≥ ${filters.priceUsdMin}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceUsdMin")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price USD Max filter */}
+      {filters.priceUsdMax !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">USD ≤ ${filters.priceUsdMax}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceUsdMax")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price USD Foil Min filter */}
+      {filters.priceUsdFoilMin !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">USD Foil ≥ ${filters.priceUsdFoilMin}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceUsdFoilMin")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price USD Foil Max filter */}
+      {filters.priceUsdFoilMax !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">USD Foil ≤ ${filters.priceUsdFoilMax}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceUsdFoilMax")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price EUR Min filter */}
+      {filters.priceEurMin !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">EUR ≥ €{filters.priceEurMin}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceEurMin")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price EUR Max filter */}
+      {filters.priceEurMax !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">EUR ≤ €{filters.priceEurMax}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceEurMax")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price TIX Min filter */}
+      {filters.priceTixMin !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">TIX ≥ {filters.priceTixMin}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceTixMin")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
+      {/* Price TIX Max filter */}
+      {filters.priceTixMax !== undefined && (
+        <Badge variant="outline" className="gap-2 pr-1">
+          <span className="text-xs">TIX ≤ {filters.priceTixMax}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-4 rounded-full p-0 hover:bg-destructive/10"
+            onClick={() => onRemoveFilter("priceTixMax")}
+          >
+            <X className="size-3" />
+          </Button>
+        </Badge>
+      )}
+
       {/* Clear all button */}
       {onClearAll && hasActiveFilters && (
         <Button
